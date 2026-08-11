@@ -1,0 +1,33 @@
+{
+  "_kommentar": "Vorlage. Kopieren nach <quellordner>/cutlist_v1.json und ausfuellen. Alles Projektabhaengige steht hier im Kopf - am Code ist nichts zu aendern.",
+
+  "quellen": "ORDNERNAME",
+  "audio": "audio/TRACK.wav",
+  "ende_s": 0.0,
+  "ausgabe": "out/PROJEKT_v1.mp4",
+
+  "breite": 1920,
+  "hoehe": 1080,
+  "fps": 25,
+  "quell_fps": 50,
+  "video_ausblende_s": 3.0,
+
+  "_felder": {
+    "quellen": "Ordner mit den Quellclips, relativ zum Projektwurzelverzeichnis",
+    "ende_s": "Zielllaenge. Nach dem nutzbaren Ende der Musik bemessen, nicht nach der Dateilaenge - Ausblenden unter ca. -40 dB sind stumm.",
+    "breite/hoehe": "Hochkant 1080x1920, Querformat 1920x1080. render.py skaliert hart auf dieses Ziel.",
+    "fps": "Framerate der Timeline. Zeitlupe ist nur sauber, wenn quell_fps genau das Doppelte ist.",
+    "shots[].in": "Einstiegszeitpunkt im Quellclip, Sekunden",
+    "shots[].schnitt_bei": "Position auf der Timeline, Sekunden. Lueckenlos an die vorige Einstellung anschliessen.",
+    "shots[].dauer": "Laenge auf der Timeline, Sekunden",
+    "shots[].tempo": "Optional. 0.5 = halbe Geschwindigkeit. verbraucht = dauer * tempo.",
+    "shots[].idee": "Warum die Einstellung hier steht. Kein Zierrat - macht beim Aendern nachvollziehbar, was kaputtgeht. Unbrauchbare Clipbereiche als ACHTUNG: notieren."
+  },
+
+  "shots": [
+    {"n": 1, "clip": "DATEINAME.MP4", "in": 0.0, "schnitt_bei": 0.0, "dauer": 3.5,
+     "idee": "..."},
+    {"n": 2, "clip": "DATEINAME.MP4", "in": 0.0, "tempo": 0.5, "schnitt_bei": 3.5, "dauer": 3.5,
+     "idee": "... (Beispiel mit Zeitlupe: verbraucht nur 1.75s Quellmaterial)"}
+  ]
+}
