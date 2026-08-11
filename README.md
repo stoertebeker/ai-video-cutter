@@ -46,13 +46,14 @@ importiert es.
 Ausgangslage: ein Ordner Clips und ein Musikstück.
 
 **1. Material ablegen.** Quellclips nach `material/<projekt>/`, Musik nach
-`audio/`. Erkannt werden `.mp4 .mov .mts .mkv .avi`, Groß-/Kleinschreibung egal.
+`audio/<projekt>/`. Erkannt werden `.mp4 .mov .mts .mkv .avi`,
+Groß-/Kleinschreibung egal.
 
 **2. Musik analysieren.** Sie gibt Länge und Schnittraster vor, nicht das Bild.
 
 ```
-.venv\Scripts\python.exe analyze_music.py audio/track.wav > audio/analyse.json
-.venv\Scripts\python.exe plan_raster.py audio/analyse.json 4
+.venv\Scripts\python.exe analyze_music.py audio/<projekt>/track.wav > audio/<projekt>/analyse.json
+.venv\Scripts\python.exe plan_raster.py audio/<projekt>/analyse.json 4
 ```
 
 `analyze_music.py` liefert Tempo, Beatzeiten, Onsets und RMS-Pegel je halbe
@@ -75,15 +76,16 @@ sortieren Drehorte und Dopplungen; acht Frames zeigen erst die Bewegung
 laufen, abgebrochene Takes.
 
 **4. Schnittliste schreiben.** `cutlist.vorlage.json` nach
-`<projekt>/cutlist_v1.json` kopieren, Kopf ausfüllen, Einstellungen eintragen.
+`projekte/<projekt>/cutlist_v1.json` kopieren, Kopf ausfüllen, Einstellungen
+eintragen.
 
 **5. Prüfen, rendern, kontrollieren.**
 
 ```
-.venv\Scripts\python.exe validate_cutlist.py zelda/cutlist_v4.json
-.venv\Scripts\python.exe render.py           zelda/cutlist_v4.json
-.venv\Scripts\python.exe sheet_sequence.py   zelda/cutlist_v4.json
-.venv\Scripts\python.exe verify_cuts.py      zelda/cutlist_v4.json
+.venv\Scripts\python.exe validate_cutlist.py projekte/zelda/cutlist_v4.json
+.venv\Scripts\python.exe render.py           projekte/zelda/cutlist_v4.json
+.venv\Scripts\python.exe sheet_sequence.py   projekte/zelda/cutlist_v4.json
+.venv\Scripts\python.exe verify_cuts.py      projekte/zelda/cutlist_v4.json
 ```
 
 `validate_cutlist.py` läuft Sekunden, ein Renderlauf Minuten — deshalb immer
@@ -108,25 +110,40 @@ Für alle Projekte gilt derselbe Abnahmeprozess:
 
 ## Aufbau
 
+**Dieses Repository enthält ausschließlich das Werkzeug.** Projekte liegen
+daneben im Arbeitsverzeichnis und werden nicht versioniert — weder Rohmaterial
+noch Musik, Schnittlisten, Projektdokumentation oder fertige Videos.
+
 ```
+                        ── im Repository ──
 *.py                    Werkzeuge, projektunabhängig
 cutlist.vorlage.json    Vorlage für neue Projekte
-CLAUDE.md AGENTS.md     Arbeitsanweisung für KI-Assistenten
+README.md CLAUDE.md AGENTS.md    Doku
 
-<projekt>/              Schnittlisten (cutlist_*.json) + PROJEKT.md   → versioniert
-material/<projekt>/     Quellclips                                    → nicht im Repo
-audio/                  Musik, Analysen, Lizenzangaben                → nur Text im Repo
+                        ── daneben, nicht versioniert ──
+projekte/<name>/        Schnittlisten (cutlist_*.json) + PROJEKT.md
+material/<name>/        Quellclips
+audio/<name>/           Musik und Analysen je Projekt
+audio/musikvorschlaege/ lizenzierte Tracks, projektübergreifend
 out/                    nummerierte Reviews + freigegebene Endfassungen
-sheets/<projekt>/       Kontaktbögen, Sequenz- und Prüfbögen
-frames/<projekt>/       Einzelframes
+sheets/<name>/          Kontaktbögen, Sequenz- und Prüfbögen
+frames/<name>/          Einzelframes
 segments/<fassung>/     Rendersegmente
-verify/<projekt>/       Prüfframes
+verify/<name>/          Prüfframes
+resolve_zwischen/       Zeitlupen-Zwischenclips für den Resolve-Export
 ```
 
-Versioniert wird nur, was klein und textbasiert ist: Werkzeuge, Doku,
-Schnittlisten, Lizenzangaben, Analyseergebnisse. Rohmaterial, Musikdateien und
-alles Abgeleitete bleiben draußen — die letzten fünf Ordner lassen sich aus
-Schnittliste plus Quellmaterial jederzeit neu erzeugen und sind löschbar.
+Die letzten fünf Ordner sind Zwischenstände und jederzeit löschbar — sie
+entstehen aus Schnittliste plus Quellmaterial neu.
+
+Ein Projekt ist auf vier Orte verteilt, und alle vier stehen als Pfad im Kopf
+der Schnittliste: sie selbst liegt in `projekte/<name>/`, `quellen` zeigt auf
+den Materialordner, `audio` auf die Musikdatei, `ausgabe` auf das Ziel. Fehlt
+eine davon, meldet `validate_cutlist.py` das vor dem Rendern.
+
+Die `.gitignore` ist als Positivliste gebaut: erst wird alles ausgeschlossen,
+dann gezielt das Werkzeug wieder hereingenommen. Ein neues Projekt bleibt
+dadurch von selbst außerhalb der Versionierung.
 
 Ein Projekt ist ein Ordner mit einer oder mehreren `cutlist_*.json` und einer
 `PROJEKT.md`, in der steht, was für dieses Material gilt: Drehorte,

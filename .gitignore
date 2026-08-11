@@ -1,61 +1,26 @@
-# Was hier hineingehoert: Werkzeuge, Doku, Schnittlisten, Lizenz- und
-# Quellenangaben, Analyseergebnisse. Alles Kleine und Textbasierte.
+# Dieses Repository enthaelt ausschliesslich das Schnittwerkzeug.
 #
-# Was draussen bleibt: Rohmaterial, Musikdateien und alles, was sich aus
-# Schnittliste plus Quellmaterial neu erzeugen laesst.
+# Projekte gehoeren nicht hinein: weder Rohmaterial noch Musik noch
+# Schnittlisten, Projektdokumentation oder fertige Videos. Sie leben im
+# Arbeitsverzeichnis daneben und werden gesondert gesichert.
+#
+# Umgesetzt als Positivliste: erst alles ausschliessen, dann gezielt das
+# Werkzeug wieder hereinnehmen. Ein neues Projekt landet damit von selbst
+# ausserhalb der Versionierung - niemand muss daran denken.
 
-# --- Rohmaterial ---------------------------------------------------------
-# Neue Projekte legen ihre Quellclips unter material/<projekt>/ ab.
-# Die Schnittlisten und PROJEKT.md bleiben in <projekt>/ und werden versioniert.
-material/
+# Alles im Wurzelverzeichnis ausschliessen ...
+/*
 
-# Sicherheitsnetz fuer Videodateien ausserhalb von material/
-*.mp4
-*.MP4
-*.mov
-*.MOV
-*.mts
-*.MTS
-*.mkv
-*.MKV
-*.avi
-*.AVI
-*.webm
-*.cr3
-*.CR3
+# ... und nur das Werkzeug wieder hereinnehmen.
+!/.gitignore
+!/*.py
+!/*.md
+!/cutlist.vorlage.json
 
-# --- Musik ---------------------------------------------------------------
-# Gross und lizenzrechtlich gebunden. Die Lizenz- und Quellenangaben daneben
-# (*.md, *.info.json) sowie die Analysen bleiben versioniert - sie sind der
-# eigentliche Wert und ohne sie ist der Schnitt nicht nachvollziehbar.
-*.wav
-*.mp3
-*.m4a
-*.aac
-*.flac
-*.ogg
-*.opus
-audio/**/*.png
-
-# --- Abgeleitetes --------------------------------------------------------
-# Aus Schnittliste und Quellmaterial jederzeit neu erzeugbar.
-out/
-frames/
-segments/
-verify/
-sheets/
-# Zeitlupen-Zwischenclips fuer den Resolve-Export. Sehr gross (ProRes, bei
-# 4K-Quelle mehrere GB je Fassung). Die Endung .mov faengt sie zwar schon,
-# aber der Ordner steht hier explizit, damit es bei einem anderen Codec
-# nicht still danebengeht.
-resolve_zwischen/
-
-# --- Umgebung ------------------------------------------------------------
-.venv/
-__pycache__/
-*.pyc
-.claude/settings.local.json
-
-# --- Windows -------------------------------------------------------------
-Thumbs.db
-desktop.ini
+# Zur Erinnerung, was dadurch draussen bleibt:
+#   projekte/<name>/   Schnittlisten und PROJEKT.md
+#   material/<name>/   Quellclips
+#   audio/             Musik, Analysen, Lizenzangaben
+#   out/               fertige Videos
+#   sheets/ frames/ segments/ verify/ resolve_zwischen/   Zwischenstaende
+#   .venv/             Python-Umgebung

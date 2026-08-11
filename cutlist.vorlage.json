@@ -1,8 +1,8 @@
 {
-  "_kommentar": "Vorlage. Kopieren nach <quellordner>/cutlist_v1.json und ausfuellen. Alles Projektabhaengige steht hier im Kopf - am Code ist nichts zu aendern.",
+  "_kommentar": "Vorlage. Kopieren nach projekte/<projekt>/cutlist_v1.json und ausfuellen. Alles Projektabhaengige steht hier im Kopf - am Code ist nichts zu aendern. Nichts davon gehoert ins Git-Repository, das enthaelt nur das Werkzeug.",
 
   "quellen": "material/PROJEKT",
-  "audio": "audio/TRACK.wav",
+  "audio": "audio/PROJEKT/TRACK.wav",
   "ende_s": 0.0,
   "ausgabe": "out/PROJEKT_v1.mp4",
 

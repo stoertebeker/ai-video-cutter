@@ -41,6 +41,12 @@ fehler, hinweise = [], []
 pos = 0.0
 belegt = collections.defaultdict(list)
 
+if not SRC.is_dir():
+    fehler.append(f"Quellordner fehlt: {SRC}")
+musik = ROOT / cfg["audio"]
+if not musik.is_file():
+    fehler.append(f"Musikdatei fehlt: {musik}")
+
 for s in cfg["shots"]:
     pfad = SRC / s["clip"]
     if not pfad.exists():

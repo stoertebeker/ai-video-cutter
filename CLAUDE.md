@@ -11,34 +11,44 @@ Datei, die man anschauen kann — dadurch bleibt alles Kreative überprüfbar.
 
 ## Aufbau
 
+**Das Git-Repository enthält ausschließlich das Werkzeug.** Kein Projekt landet
+darin — weder Rohmaterial noch Musik noch Schnittlisten, Projektdokumentation
+oder fertige Videos.
+
 ```
+                             ── im Repository ──
 README.md                    Übersicht für Menschen
 CLAUDE.md AGENTS.md          Arbeitsanweisung für Agenten
 cutlist.vorlage.json         Vorlage für neue Projekte
 *.py                         Werkzeuge, projektunabhängig
-.venv/                       Python-Umgebung
 
-<projekt>/                   cutlist_*.json + PROJEKT.md      → versioniert
-material/<projekt>/          Quellclips                       → nicht im Repo
-audio/                       Musik und Analysen               → nur Text im Repo
+                             ── daneben, nicht versioniert ──
+projekte/<name>/             cutlist_*.json + PROJEKT.md
+material/<name>/             Quellclips
+audio/<name>/                Musik und Analysen je Projekt
+audio/musikvorschlaege/      lizenzierte Tracks, projektübergreifend
 out/                         nummerierte Reviews + freigegebene Endfassungen
-sheets/<projekt>/            Kontaktbögen, Sequenz- und Prüfbögen
-frames/<projekt>/            Einzelframes
+sheets/<name>/               Kontaktbögen, Sequenz- und Prüfbögen
+frames/<name>/               Einzelframes
 segments/<fassung>/          Rendersegmente
-verify/<projekt>/            Prüfframes
+verify/<name>/               Prüfframes
 resolve_zwischen/<fassung>/  Zeitlupen-Zwischenclips für den Resolve-Export
+.venv/                       Python-Umgebung
 ```
 
-Die letzten sechs sind Zwischenstände und jederzeit löschbar — sie entstehen
-aus Schnittliste plus Quellmaterial neu.
+Die letzten fünf sind Zwischenstände und jederzeit löschbar — sie entstehen aus
+Schnittliste plus Quellmaterial neu.
 
-**Schnittlisten und Rohmaterial liegen getrennt.** Ein Projekt besteht aus
-einem Ordner `<projekt>/` mit einer oder mehreren `cutlist_*.json` und einer
-`PROJEKT.md` — das ist der versionierte Teil. Die Quellclips liegen daneben
-unter `material/<projekt>/` und bleiben aus dem Repository heraus; welcher
-Ordner das ist, steht im Kopf der Schnittliste unter `quellen`. Fehlt das Feld,
-brechen `render.py` und `validate_cutlist.py` mit Meldung ab, statt still auf
-einen falschen Ordner zu zeigen.
+**Ein Projekt ist auf vier Orte verteilt**, und alle vier stehen als Pfad im
+Kopf der Schnittliste: `projekte/<name>/` für die Schnittlisten selbst,
+`quellen` zeigt auf `material/<name>/`, `audio` auf die Musikdatei, `ausgabe`
+auf das Ziel unter `out/`. Fehlt `quellen`, brechen `render.py` und
+`validate_cutlist.py` mit Meldung ab; fehlt eine der Dateien, meldet es
+`validate_cutlist.py` vor dem Rendern.
+
+Die `.gitignore` arbeitet als Positivliste: erst wird alles ausgeschlossen,
+dann gezielt das Werkzeug wieder hereingenommen. Ein neues Projekt landet
+dadurch von selbst außerhalb der Versionierung — niemand muss daran denken.
 
 Am Code ist für ein neues Projekt nichts zu ändern.
 
@@ -72,9 +82,9 @@ registrieren.
 Die Musik gibt Länge und Schnittraster vor.
 
 ```
-yt-dlp -f bestaudio -x --audio-format wav -o "audio/scratch.%(ext)s" <URL>
-python analyze_music.py audio/scratch.wav > audio/analyse.json
-python plan_raster.py audio/analyse.json 4
+yt-dlp -f bestaudio -x --audio-format wav -o "audio/<projekt>/scratch.%(ext)s" <URL>
+python analyze_music.py audio/<projekt>/scratch.wav > audio/<projekt>/analyse.json
+python plan_raster.py audio/<projekt>/analyse.json 4
 ```
 
 `analyze_music.py` liefert Tempo, Beatzeiten, Onsets und RMS-Pegel je halbe
@@ -163,10 +173,10 @@ Länge, weil die Tonspur sie vorgibt.
 ### 4. Rendern und prüfen
 
 ```
-python validate_cutlist.py <projekt>/cutlist_v1.json   # IMMER vor dem Rendern
-python render.py           <projekt>/cutlist_v1.json
-python sheet_sequence.py   <projekt>/cutlist_v1.json
-python verify_cuts.py      <projekt>/cutlist_v1.json
+python validate_cutlist.py projekte/<projekt>/cutlist_v1.json   # IMMER vor dem Rendern
+python render.py           projekte/<projekt>/cutlist_v1.json
+python sheet_sequence.py   projekte/<projekt>/cutlist_v1.json
+python verify_cuts.py      projekte/<projekt>/cutlist_v1.json
 ```
 
 `validate_cutlist.py` prüft: lückenlose Schnittpunkte, kein Clip liest über
@@ -216,7 +226,7 @@ Für den finalen Schnitt und die Farbkorrektur, nicht als Ersatz für die
 mp4-Kette oben. Zwei Skripte:
 
 ```
-.venv\Scripts\python.exe resolve_prep_slowmo.py <projekt>/cutlist_vN.json
+.venv\Scripts\python.exe resolve_prep_slowmo.py projekte/<projekt>/cutlist_vN.json
 ```
 backt jede Zeitlupen-Einstellung zu einem ProRes-Zwischenclip (läuft normal
 in der Venv, außerhalb von Resolve). Danach `resolve_build.py` nach
@@ -288,7 +298,7 @@ Skalierung, als ProRes 422 HQ). `resolve_build.py` hängt diesen bereits
 verlangsamten Zwischenclip mit Tempo 1.0 in die Timeline — Resolve muss dann
 gar nichts mehr retimen. Nachteil: Farbkorrektur läuft für diese Einstellungen
 auf dem Zwischencodec, nicht auf der Kameradatei. Gemessen für
-`zelda/cutlist_v4.json` (15 Zeitlupen-Einstellungen, 2160×3840): **8,9 GB**
+`projekte/zelda/cutlist_v4.json` (15 Zeitlupen-Einstellungen, 2160×3840): **8,9 GB**
 Zwischenmaterial für rund 47 s Zeitlupenanteil. Bei Platzmangel
 `PRORES_PROFIL` am Kopf von `resolve_prep_slowmo.py` auf 2 (422 Standard) oder
 0 (Proxy) stellen.
@@ -336,8 +346,8 @@ stillschweigend falsch zu lassen.
 
 ## Neues Projekt aufsetzen
 
-1. Quellclips nach `material/<projekt>/`, Musik nach `audio/`.
-2. `cutlist.vorlage.json` nach `<projekt>/cutlist_v1.json` kopieren, Kopf
+1. Quellclips nach `material/<projekt>/`, Musik nach `audio/<projekt>/`.
+2. `cutlist.vorlage.json` nach `projekte/<projekt>/cutlist_v1.json` kopieren, Kopf
    ausfüllen: `quellen` (= `material/<projekt>`), `audio`, `ausgabe`,
    Auflösung, Framerate.
 3. `analyze_music.py`, dann `plan_raster.py` — Raster ableiten.
@@ -345,7 +355,7 @@ stillschweigend falsch zu lassen.
 5. `validate_cutlist.py`, nummerierte Reviewfassung rendern,
    `sheet_sequence.py`, `verify_cuts.py`, iterieren.
 6. Nach ausdrücklicher Freigabe einmalig die unnummerierte Endfassung rendern.
-7. Befunde zum Material in `<projekt>/PROJEKT.md` festhalten.
+7. Befunde zum Material in `projekte/<projekt>/PROJEKT.md` festhalten.
 
 Erkannt werden `.mp4 .mov .mts .mkv .avi`, Groß- und Kleinschreibung egal.
 

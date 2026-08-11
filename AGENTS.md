@@ -17,19 +17,27 @@ gelesen. Ohne diesen Schritt kennt der Agent nur Dateinamen und rät.
 
 ## Aufbau
 
-Die Skripte im Wurzelverzeichnis sind projektunabhängig.
+Die Skripte im Wurzelverzeichnis sind projektunabhängig. **Das Git-Repository
+enthält ausschließlich sie und die Doku — kein Projekt landet darin.**
 
 ```
-<projekt>/            cutlist_*.json + PROJEKT.md      -> im Repository
-material/<projekt>/   Quellclips                       -> nicht im Repository
-audio/                Musik und Analysen               -> nur Text im Repository
-out/ sheets/ frames/ segments/ verify/   Abgeleitetes  -> nicht im Repository
+*.py *.md cutlist.vorlage.json   das Werkzeug      -> im Repository
+
+projekte/<name>/      cutlist_*.json + PROJEKT.md   -> nicht im Repository
+material/<name>/      Quellclips                    -> nicht im Repository
+audio/<name>/         Musik und Analysen            -> nicht im Repository
+out/ sheets/ frames/ segments/ verify/ resolve_zwischen/   -> nicht im Repo
 ```
 
-**Schnittlisten und Rohmaterial liegen getrennt.** Der Ordner mit den Clips
-steht im Kopf der Schnittliste unter `quellen` (z. B. `material/zelda`); fehlt
-das Feld, brechen die Skripte mit Meldung ab. In `<projekt>/PROJEKT.md` steht,
-was für dieses Material gilt.
+**Ein Projekt ist auf vier Orte verteilt**, alle vier stehen als Pfad im Kopf
+der Schnittliste: sie selbst liegt in `projekte/<name>/`, `quellen` zeigt auf
+`material/<name>/`, `audio` auf die Musikdatei, `ausgabe` auf das Ziel unter
+`out/`. Fehlt `quellen` oder eine der Dateien, meldet `validate_cutlist.py`
+das vor dem Rendern. In `projekte/<name>/PROJEKT.md` steht, was für dieses
+Material gilt.
+
+Die `.gitignore` ist eine Positivliste: erst alles ausschließen, dann das
+Werkzeug wieder hereinnehmen. Neue Projekte bleiben dadurch von selbst außen.
 
 **Vor der Arbeit an einem Projekt dessen `PROJEKT.md` lesen** — dort stehen
 unbrauchbare Clipbereiche, Dopplungen und Outtakes. Neue Befunde dort
@@ -51,15 +59,15 @@ ffmpeg und ffprobe 7.1.1 sind im PATH. Shell ist PowerShell auf Windows.
 ## Der Ablauf
 
 ```
-.venv\Scripts\python.exe analyze_music.py audio/<track>.wav > audio/analyse.json
-.venv\Scripts\python.exe plan_raster.py audio/analyse.json 4
+.venv\Scripts\python.exe analyze_music.py audio/<projekt>/<track>.wav > audio/<projekt>/analyse.json
+.venv\Scripts\python.exe plan_raster.py audio/<projekt>/analyse.json 4
 .venv\Scripts\python.exe make_contactsheets.py material/<projekt> 3 5
 .venv\Scripts\python.exe make_contactsheets.py material/<projekt> 8 6 <filter>
 #   -> sheets/<projekt>/*.png als Bilder ansehen, dann Schnittliste schreiben
-.venv\Scripts\python.exe validate_cutlist.py <projekt>/cutlist_v1.json
-.venv\Scripts\python.exe render.py           <projekt>/cutlist_v1.json
-.venv\Scripts\python.exe sheet_sequence.py   <projekt>/cutlist_v1.json
-.venv\Scripts\python.exe verify_cuts.py      <projekt>/cutlist_v1.json
+.venv\Scripts\python.exe validate_cutlist.py projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe render.py           projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe sheet_sequence.py   projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe verify_cuts.py      projekte/<projekt>/cutlist_v1.json
 ```
 
 Die Schnittliste ist die einzige Quelle der Wahrheit. Alles andere wird daraus
