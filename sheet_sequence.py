@@ -12,9 +12,13 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).parent
-liste = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "cutlist.json"
+if len(sys.argv) < 2:
+    raise SystemExit("Aufruf: sheet_sequence.py <projekt>/cutlist_vN.json")
+liste = Path(sys.argv[1])
 if not liste.is_absolute():
     liste = ROOT / liste
+if not liste.is_file():
+    raise SystemExit(f"Schnittliste nicht gefunden: {liste}")
 
 cfg = json.loads(liste.read_text(encoding="utf-8-sig"))
 VID = ROOT / cfg["ausgabe"]

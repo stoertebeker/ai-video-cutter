@@ -44,6 +44,11 @@ frames/
 segments/
 verify/
 sheets/
+# Zeitlupen-Zwischenclips fuer den Resolve-Export. Sehr gross (ProRes, bei
+# 4K-Quelle mehrere GB je Fassung). Die Endung .mov faengt sie zwar schon,
+# aber der Ordner steht hier explizit, damit es bei einem anderen Codec
+# nicht still danebengeht.
+resolve_zwischen/
 
 # --- Umgebung ------------------------------------------------------------
 .venv/

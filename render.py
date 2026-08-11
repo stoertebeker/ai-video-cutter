@@ -9,9 +9,13 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 # Schnittliste als Argument, sonst die Standardfassung. So koennen mehrere
 # Fassungen nebeneinander bestehen.
-CUTLIST = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "cutlist.json"
+if len(sys.argv) < 2:
+    raise SystemExit("Aufruf: render.py <projekt>/cutlist_vN.json")
+CUTLIST = Path(sys.argv[1])
 if not CUTLIST.is_absolute():
     CUTLIST = ROOT / CUTLIST
+if not CUTLIST.is_file():
+    raise SystemExit(f"Schnittliste nicht gefunden: {CUTLIST}")
 # Eigener Segmentordner je Fassung, sonst ueberschreiben sie sich gegenseitig.
 SEG = ROOT / "segments" / CUTLIST.stem
 

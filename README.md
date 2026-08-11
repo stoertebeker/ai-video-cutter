@@ -1,0 +1,236 @@
+# Musikgeschnittene Videomontage
+
+Aus vielen kurzen Clips eine auf Musik geschnittene Montage bauen — mit ffmpeg
+und Python, vollständig lokal. Keine API-Keys, keine Cloud, kein Konto.
+
+Gedacht für alle, die einen Ordner voller Clips und ein Musikstück haben und
+daraus einen Teaser schneiden wollen, ohne dafür ein Schnittprogramm
+aufzumachen.
+
+## Das Prinzip
+
+Zwei Dinge unterscheiden diese Kette von einem Schnittskript:
+
+**Das Material wird angesehen, nicht geraten.** `make_contactsheets.py` zieht
+je Clip mehrere Frames und baut daraus beschriftete Kontaktbögen als PNG. Diese
+Bilder kann ein KI-Assistent mit seinem Datei-Lesewerkzeug tatsächlich als Bild
+lesen. Ohne diesen Schritt kennt er nur Dateinamen — und rät.
+
+**Die Maschine rechnet, der Mensch entscheidet.** Beatraster, Lautstärkeverlauf,
+lückenlose Timeline, Zeitlupenarithmetik: das ist Fleißarbeit und wird
+gerechnet. Welche Einstellung wohin gehört und ob ein Schnitt sitzt, entscheidet
+der Mensch. Jeder Schritt hinterlässt eine Datei, die man anschauen kann.
+
+## Voraussetzungen
+
+- **ffmpeg und ffprobe** im PATH (entwickelt mit 7.1.1)
+- **Python 3.13** in einer Venv unter `.venv`
+- **librosa** (Beat- und Lautstärkeanalyse), **numpy**, **Pillow**
+  (Kontaktbögen), **yt-dlp** (nur um einen Scratch-Track zu ziehen)
+
+```
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install librosa pillow yt-dlp
+```
+
+Die Skripte werden **immer über die Venv** aufgerufen:
+`.venv\Scripts\python.exe <skript>.py …`
+
+`CLAUDE.md` beschreibt zusätzlich den Weg über die Kinocut-Extras
+(`pip install "kinocut[image,audio-enhanced,audio-analysis]" yt-dlp`), der
+dieselben Pakete mitbringt. Kinocut selbst ist optional — kein Skript hier
+importiert es.
+
+## Schnellstart
+
+Ausgangslage: ein Ordner Clips und ein Musikstück.
+
+**1. Material ablegen.** Quellclips nach `material/<projekt>/`, Musik nach
+`audio/`. Erkannt werden `.mp4 .mov .mts .mkv .avi`, Groß-/Kleinschreibung egal.
+
+**2. Musik analysieren.** Sie gibt Länge und Schnittraster vor, nicht das Bild.
+
+```
+.venv\Scripts\python.exe analyze_music.py audio/track.wav > audio/analyse.json
+.venv\Scripts\python.exe plan_raster.py audio/analyse.json 4
+```
+
+`analyze_music.py` liefert Tempo, Beatzeiten, Onsets und RMS-Pegel je halbe
+Sekunde. `plan_raster.py` nimmt jeden vierten erkannten Beat als Taktgrenze und
+schreibt den Pegel daneben — diese Tabelle ist die Vorlage für die
+Schnittzeitpunkte. (PowerShells `>` schreibt UTF-8 mit BOM; die Skripte lesen
+deshalb mit `utf-8-sig`.)
+
+**3. Material sichten.** Erst grob, dann dicht:
+
+```
+.venv\Scripts\python.exe make_contactsheets.py material/zelda 3 5
+.venv\Scripts\python.exe make_contactsheets.py material/zelda 8 6 1364
+```
+
+Argumente: Quellordner, Frames je Clip, Clips je Bogen, optional ein
+Namensfragment als Filter. Ergebnis liegt in `sheets/<projekt>/`. Drei Frames
+sortieren Drehorte und Dopplungen; acht Frames zeigen erst die Bewegung
+*innerhalb* einer Einstellung — Schärfefahrten, Schwenks, die aus dem Motiv
+laufen, abgebrochene Takes.
+
+**4. Schnittliste schreiben.** `cutlist.vorlage.json` nach
+`<projekt>/cutlist_v1.json` kopieren, Kopf ausfüllen, Einstellungen eintragen.
+
+**5. Prüfen, rendern, kontrollieren.**
+
+```
+.venv\Scripts\python.exe validate_cutlist.py zelda/cutlist_v4.json
+.venv\Scripts\python.exe render.py           zelda/cutlist_v4.json
+.venv\Scripts\python.exe sheet_sequence.py   zelda/cutlist_v4.json
+.venv\Scripts\python.exe verify_cuts.py      zelda/cutlist_v4.json
+```
+
+`validate_cutlist.py` läuft Sekunden, ein Renderlauf Minuten — deshalb immer
+zuerst prüfen. Es fängt Lücken in der Timeline, Clips, die über ihr Quellende
+hinauslesen, überlappende Mehrfachverwendungen desselben Clips und eine
+Dauersumme, die nicht zu `ende_s` passt. Dazu listet es ungenutzte Clips.
+
+**6. Nummerierte Reviewfassung und Freigabe.**
+
+Für alle Projekte gilt derselbe Abnahmeprozess:
+
+- Während der Feedbackrunden wird ausschließlich eine nummerierte
+  Arbeitsfassung ausgegeben. Jede Einstellung zeigt unten rechts eine große,
+  fortlaufende Zahl aus dem Feld `n` der aktuellen Schnittliste.
+- Nach Änderungen wird neu nummeriert. Änderungswünsche müssen sich auf die
+  zuletzt ausgegebene Reviewfassung beziehen.
+- Es wird nicht bei jeder Runde zusätzlich eine saubere Fassung ohne Zahlen
+  gerendert oder ausgegeben. Die nummerierte Datei mit dem Zusatz
+  `_nummeriert` ist die Abnahmefassung.
+- Erst nach ausdrücklicher finaler Freigabe wird einmalig die unnummerierte
+  Endfassung gerendert und technisch abschließend geprüft.
+
+## Aufbau
+
+```
+*.py                    Werkzeuge, projektunabhängig
+cutlist.vorlage.json    Vorlage für neue Projekte
+CLAUDE.md AGENTS.md     Arbeitsanweisung für KI-Assistenten
+
+<projekt>/              Schnittlisten (cutlist_*.json) + PROJEKT.md   → versioniert
+material/<projekt>/     Quellclips                                    → nicht im Repo
+audio/                  Musik, Analysen, Lizenzangaben                → nur Text im Repo
+out/                    nummerierte Reviews + freigegebene Endfassungen
+sheets/<projekt>/       Kontaktbögen, Sequenz- und Prüfbögen
+frames/<projekt>/       Einzelframes
+segments/<fassung>/     Rendersegmente
+verify/<projekt>/       Prüfframes
+```
+
+Versioniert wird nur, was klein und textbasiert ist: Werkzeuge, Doku,
+Schnittlisten, Lizenzangaben, Analyseergebnisse. Rohmaterial, Musikdateien und
+alles Abgeleitete bleiben draußen — die letzten fünf Ordner lassen sich aus
+Schnittliste plus Quellmaterial jederzeit neu erzeugen und sind löschbar.
+
+Ein Projekt ist ein Ordner mit einer oder mehreren `cutlist_*.json` und einer
+`PROJEKT.md`, in der steht, was für dieses Material gilt: Drehorte,
+unbrauchbare Clipbereiche, Dopplungen. **Am Code ist für ein neues Projekt
+nichts zu ändern**, alles Projektabhängige steht im Kopf der Schnittliste.
+
+| Werkzeug | Was es tut |
+|---|---|
+| `analyze_music.py` | Tempo, Beats, Onsets, RMS-Verlauf als JSON |
+| `plan_raster.py` | Taktraster aus den erkannten Beats, mit Pegel |
+| `make_contactsheets.py` | Kontaktbögen aus den Quellclips |
+| `validate_cutlist.py` | prüft die Schnittliste vor dem Rendern |
+| `render.py` | Segmente kodieren, aneinanderhängen, Musik drunter |
+| `sheet_sequence.py` | ein Frame je Einstellung aus dem fertigen Video |
+| `verify_cuts.py` | Frames vor und nach jedem Schnitt |
+| `make_numbered_review.py` | erzeugt die nummerierte Abnahmefassung |
+
+## Die Schnittliste
+
+`cutlist_*.json` ist die **einzige Quelle der Wahrheit**. Alles andere wird
+daraus erzeugt: Segmente, Video, Prüfbögen. Geändert wird die Schnittliste,
+danach neu gerendert — nie am fertigen MP4.
+
+Während der Iteration ist das gerenderte Ergebnis immer die nummerierte
+Reviewfassung. Eine unnummerierte Version gilt erst nach ausdrücklicher
+Freigabe als Endfassung und wird deshalb nicht parallel zu jeder Feedbackrunde
+erzeugt.
+
+Im Kopf steht das Projekt: `quellen` (der Materialordner, z. B.
+`material/zelda`), `audio`, `ausgabe`, `ende_s`, `breite`/`hoehe`, `fps`,
+`quell_fps`, `video_ausblende_s` (optional dazu `video_einblende_s`).
+
+Darunter die Einstellungen, je eine Zeile:
+
+```json
+{"n": 17, "clip": "5V4A1347_rotated.MP4", "in": 0.40, "tempo": 0.5,
+ "schnitt_bei": 42.176, "dauer": 3.541,
+ "idee": "AKT 5 DAS KOSTUEM - voller Takt in Zeitlupe. 0.4-2.2s ist der Bereich, in dem der Koecher scharf im Bild liegt."}
+```
+
+`in` ist der Einstiegszeitpunkt im Quellclip, `schnitt_bei` die Position auf der
+Timeline (lückenlos an die vorige Einstellung anschließend), `dauer` die Länge
+auf der Timeline. Die `idee` ist kein Zierrat — sie macht später
+nachvollziehbar, was beim Ändern kaputtgeht.
+
+`tempo` ist optional und der wirksamste Hebel gegen Materialmangel: `0.5`
+halbiert die Geschwindigkeit, verbraucht wird `dauer × tempo`. Bei 50-fps-Quelle
+und 25-fps-Timeline wird aus jedem Quellframe genau ein Ausgabeframe — echte
+Zeitlupe, nichts interpoliert.
+
+Alle Felder mit Erklärung stehen in `cutlist.vorlage.json`.
+
+## Beispiel: `zelda/`
+
+Ein durchgearbeiteter Fall. 20 Clips von einem Cosplay-Shooting, 2160×3840
+hochkant, 50 fps, zusammen 159 Sekunden Material an zwei Drehorten plus einer
+Gruppe ortsneutraler Detailaufnahmen.
+
+Daraus vier Fassungen, jede mit eigener Musik und eigener Schnittliste. Die
+aktuelle `cutlist_v4.json` ist 68 Sekunden lang, 23 Einstellungen, 17 der 20
+Clips genutzt, ausgegeben als 1080×1920 bei 25 fps. Fünf Clips kommen mehrfach
+vor — mit verschiedenen Einstiegszeitpunkten und dazwischenliegenden
+Zwischenschnitten.
+
+`zelda/PROJEKT.md` zeigt, was so ein Materialprotokoll leistet: welche Clips
+Outtakes sind, ab welcher Sekunde eine Schärfefahrt vorbei ist, welche Takes
+sich so ähnlich sehen, dass sie nie hintereinander stehen dürfen. Dieses Wissen
+in einer Datei zu halten, ist der Unterschied zwischen der zweiten und der
+vierten Fassung.
+
+## Grenzen
+
+- **Kein Export in ein Schnittprogramm.** Der frühere FCPXML-Export und die
+  Resolve-Anbindung sind entfernt und werden neu gemacht. Ergebnis ist derzeit
+  ein fertiges MP4, keine Timeline zum Weiterbearbeiten.
+- **Originalton wird verworfen.** `render.py` kodiert die Segmente mit `-an` und
+  legt nur die Musik darunter. Für Material, bei dem gesprochen wird, ist das
+  falsch — eine zweite Tonspur mit `amix` und Ducking ist nicht gebaut.
+- **Gemischte Seitenverhältnisse werden hart skaliert**, nicht beschnitten oder
+  gerahmt. Bei uneinheitlichem Quellformat verzerrt das Bild.
+- **Zeitlupe nur bei passender Framerate.** Sauber ist sie, wenn `quell_fps`
+  genau das Doppelte von `fps` ist (50→25, 60→30). Sonst interpoliert oder
+  doppelt ffmpeg Frames.
+- **Keine Bildstabilisierung.** War über ffmpeg/vid.stab eingebaut und wurde
+  bewusst wieder entfernt: Der Gewinn war gering, und bei absichtlichen
+  Kamerafahrten machte der Ausgleich das Bild schlechter, weil er die gewollte
+  Bewegung nicht vom Wackeln trennen kann und dafür merklich hineinzoomen muss.
+  Das gehört ins Schnitt- und Korrekturprogramm.
+
+Quellmaterial wird nie verändert; alles Abgeleitete landet in eigenen Ordnern.
+
+## Musikrechte und Personen
+
+Die Musik in diesem Repository ist **Scratch** — Platzhalter, um das Timing zu
+finden. Vor jeder Veröffentlichung ist sie zu lizenzieren oder zu ersetzen:
+`analyze_music.py` auf den neuen Track anwenden, Raster ableiten, Schnittpunkte
+umrechnen; die Reihenfolge der Einstellungen bleibt dabei erhalten, nur die
+Längen verschieben sich. Und bei Material mit erkennbaren Personen — besonders
+bei Veranstaltungen, wo Leute im Bild sind, die nicht für die Kamera dort waren
+— ist vor der Veröffentlichung zu klären, wer einverstanden ist. Beim Schnitt
+erledigt sich das nicht von selbst.
+
+## Weiterlesen
+
+`CLAUDE.md` enthält die ausführliche Arbeitsanweisung: den vollständigen Ablauf,
+die Dramaturgie, die es zu befolgen lohnt, und die Fallstricke, die schon Zeit
+gekostet haben. `AGENTS.md` ist die Kurzfassung davon für andere KI-Assistenten.

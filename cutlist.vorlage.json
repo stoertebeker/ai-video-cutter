@@ -1,7 +1,7 @@
 {
   "_kommentar": "Vorlage. Kopieren nach <quellordner>/cutlist_v1.json und ausfuellen. Alles Projektabhaengige steht hier im Kopf - am Code ist nichts zu aendern.",
 
-  "quellen": "ORDNERNAME",
+  "quellen": "material/PROJEKT",
   "audio": "audio/TRACK.wav",
   "ende_s": 0.0,
   "ausgabe": "out/PROJEKT_v1.mp4",
@@ -11,9 +11,11 @@
   "fps": 25,
   "quell_fps": 50,
   "video_ausblende_s": 3.0,
+  "video_einblende_s": 0.0,
 
   "_felder": {
-    "quellen": "Ordner mit den Quellclips, relativ zum Projektwurzelverzeichnis",
+    "quellen": "Ordner mit den Quellclips, relativ zum Projektwurzelverzeichnis. Rohmaterial liegt unter material/<projekt>/ und bleibt aus der Versionierung heraus; diese Schnittliste selbst gehoert nach <projekt>/ und wird versioniert.",
+    "video_einblende_s": "Optional, 0 = keine Einblende.",
     "ende_s": "Zielllaenge. Nach dem nutzbaren Ende der Musik bemessen, nicht nach der Dateilaenge - Ausblenden unter ca. -40 dB sind stumm.",
     "breite/hoehe": "Hochkant 1080x1920, Querformat 1920x1080. render.py skaliert hart auf dieses Ziel.",
     "fps": "Framerate der Timeline. Zeitlupe ist nur sauber, wenn quell_fps genau das Doppelte ist.",

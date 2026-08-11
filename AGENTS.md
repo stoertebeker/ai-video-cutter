@@ -3,6 +3,7 @@
 **Lies zuerst `CLAUDE.md` im selben Ordner.** Dort steht die vollständige
 Werkzeugkette: Ablauf, Dramaturgie, Fallstricke. Diese Datei ist der Einstieg
 und wiederholt die Punkte, an denen man ohne Vorwissen scheitert.
+`README.md` richtet sich an Menschen und ist die kürzere Übersicht.
 
 ## Was dieses Projekt ist
 
@@ -16,9 +17,19 @@ gelesen. Ohne diesen Schritt kennt der Agent nur Dateinamen und rät.
 
 ## Aufbau
 
-Die Skripte im Wurzelverzeichnis sind projektunabhängig. Ein Projekt ist ein
-Ordner mit Quellclips, einer oder mehreren `cutlist_*.json` darin und einer
-`PROJEKT.md` mit dem, was für dieses Material gilt.
+Die Skripte im Wurzelverzeichnis sind projektunabhängig.
+
+```
+<projekt>/            cutlist_*.json + PROJEKT.md      -> im Repository
+material/<projekt>/   Quellclips                       -> nicht im Repository
+audio/                Musik und Analysen               -> nur Text im Repository
+out/ sheets/ frames/ segments/ verify/   Abgeleitetes  -> nicht im Repository
+```
+
+**Schnittlisten und Rohmaterial liegen getrennt.** Der Ordner mit den Clips
+steht im Kopf der Schnittliste unter `quellen` (z. B. `material/zelda`); fehlt
+das Feld, brechen die Skripte mit Meldung ab. In `<projekt>/PROJEKT.md` steht,
+was für dieses Material gilt.
 
 **Vor der Arbeit an einem Projekt dessen `PROJEKT.md` lesen** — dort stehen
 unbrauchbare Clipbereiche, Dopplungen und Outtakes. Neue Befunde dort
@@ -42,8 +53,8 @@ ffmpeg und ffprobe 7.1.1 sind im PATH. Shell ist PowerShell auf Windows.
 ```
 .venv\Scripts\python.exe analyze_music.py audio/<track>.wav > audio/analyse.json
 .venv\Scripts\python.exe plan_raster.py audio/analyse.json 4
-.venv\Scripts\python.exe make_contactsheets.py <projekt> 3 5
-.venv\Scripts\python.exe make_contactsheets.py <projekt> 8 6 <filter>
+.venv\Scripts\python.exe make_contactsheets.py material/<projekt> 3 5
+.venv\Scripts\python.exe make_contactsheets.py material/<projekt> 8 6 <filter>
 #   -> sheets/<projekt>/*.png als Bilder ansehen, dann Schnittliste schreiben
 .venv\Scripts\python.exe validate_cutlist.py <projekt>/cutlist_v1.json
 .venv\Scripts\python.exe render.py           <projekt>/cutlist_v1.json
@@ -53,6 +64,18 @@ ffmpeg und ffprobe 7.1.1 sind im PATH. Shell ist PowerShell auf Windows.
 
 Die Schnittliste ist die einzige Quelle der Wahrheit. Alles andere wird daraus
 erzeugt. Nie am gerenderten MP4 herumschneiden.
+
+### Verbindlicher Review-Modus für alle Projekte
+
+- Während der Feedbackrunden wird nur eine **nummerierte Arbeitsfassung**
+  ausgegeben. Jede Einstellung trägt unten rechts eine große fortlaufende
+  Zahl aus dem Feld `n` der aktuellen Schnittliste.
+- Nach Änderungen wird die Nummerierung aus der neuen Schnittliste vollständig
+  neu erzeugt. Feedback bezieht sich immer auf die zuletzt ausgegebene
+  nummerierte Fassung.
+- Keine separate unnummerierte Parallelfassung pro Feedbackrunde rendern oder
+  ausgeben. Die **finale Version ohne Zahlen** entsteht erst einmalig nach der
+  ausdrücklichen Freigabe des Bildschnitts.
 
 ## Sechs Dinge, die Zeit kosten, wenn man sie nicht weiß
 
@@ -80,9 +103,24 @@ erzeugt. Nie am gerenderten MP4 herumschneiden.
 6. **Kinocut läuft unter Windows nicht als MCP-Server** (`fcntl`-Import). Die
    CLI funktioniert vollständig. Nicht via `claude mcp add` registrieren.
 
+7. **Resolve-API: `endFrame` in `AppendToTimeline`-Clip-Infos ist
+   einschließlich gezählt**, nicht exklusiv — `{"startFrame": 0, "endFrame": 23}`
+   sind 24 Frames. Steht so im Kommentar von
+   `7_add_subclips_to_timeline.py` im Scripting-SDK, nirgends sonst explizit.
+   Leicht zu übersehen, ergibt sonst einen Frame Differenz pro Einstellung.
+
+## Export nach DaVinci Resolve
+
+Zwei Skripte: `resolve_prep_slowmo.py` (normale Venv, backt Zeitlupe zu
+ProRes-Zwischenclips) und `resolve_build.py` (läuft **innerhalb** von
+Resolve über Workspace > Scripts, baut die Timeline per API statt per
+FCPXML-Import — der scheiterte an Resolves Konformierung). Details, warum
+FCPXML nicht geht und warum Resolves Scripting-API keine Möglichkeit hat,
+die Clip-Geschwindigkeit zu setzen, stehen in `CLAUDE.md` unter „Export nach
+DaVinci Resolve". Vor dem nächsten Versuch dort lesen, nicht neu recherchieren.
+
 ## Was nicht gebaut ist
 
-- Export in ein Schnittprogramm (FCPXML/Resolve wurde entfernt, kommt neu)
 - Originalton der Clips — `render.py` verwirft ihn und legt nur Musik darunter
 - gemischte Seitenverhältnisse — es wird hart skaliert, nicht beschnitten
 - **Bildstabilisierung** — war eingebaut, wurde bewusst wieder entfernt. Der
@@ -93,6 +131,8 @@ erzeugt. Nie am gerenderten MP4 herumschneiden.
 ## Umgangsformen
 
 - Quellmaterial nie verändern. Alles Abgeleitete in eigene Ordner.
+- Reviewfassungen immer nummeriert; eine unnummerierte Endfassung erst nach
+  ausdrücklicher finaler Freigabe.
 - Behauptungen belegen: Frames ziehen und ansehen, Dauern messen. Vermutung
   und Messung auseinanderhalten, Korrekturen offen benennen.
 - Ob ein Schnitt *sitzt*, entscheidet der Mensch. Der Agent rechnet Raster,

@@ -12,26 +12,35 @@ Datei, die man anschauen kann — dadurch bleibt alles Kreative überprüfbar.
 ## Aufbau
 
 ```
-CLAUDE.md AGENTS.md          diese Doku
+README.md                    Übersicht für Menschen
+CLAUDE.md AGENTS.md          Arbeitsanweisung für Agenten
 cutlist.vorlage.json         Vorlage für neue Projekte
 *.py                         Werkzeuge, projektunabhängig
 .venv/                       Python-Umgebung
 
-<projekt>/                   ein Projekt: Quellclips + Schnittlisten + PROJEKT.md
-audio/                       Musik und Analysen
-out/                         fertige Videos
+<projekt>/                   cutlist_*.json + PROJEKT.md      → versioniert
+material/<projekt>/          Quellclips                       → nicht im Repo
+audio/                       Musik und Analysen               → nur Text im Repo
+out/                         nummerierte Reviews + freigegebene Endfassungen
 sheets/<projekt>/            Kontaktbögen, Sequenz- und Prüfbögen
 frames/<projekt>/            Einzelframes
 segments/<fassung>/          Rendersegmente
 verify/<projekt>/            Prüfframes
+resolve_zwischen/<fassung>/  Zeitlupen-Zwischenclips für den Resolve-Export
 ```
 
-Die letzten drei sind reine Zwischenstände und jederzeit löschbar.
+Die letzten sechs sind Zwischenstände und jederzeit löschbar — sie entstehen
+aus Schnittliste plus Quellmaterial neu.
 
-**Ein Projekt besteht aus einem Ordner mit Quellclips, einer oder mehreren
-`cutlist_*.json` darin und einer `PROJEKT.md`** mit dem, was für dieses
-Material gilt: Drehorte, unbrauchbare Clipbereiche, Dopplungen. Am Code ist für
-ein neues Projekt nichts zu ändern.
+**Schnittlisten und Rohmaterial liegen getrennt.** Ein Projekt besteht aus
+einem Ordner `<projekt>/` mit einer oder mehreren `cutlist_*.json` und einer
+`PROJEKT.md` — das ist der versionierte Teil. Die Quellclips liegen daneben
+unter `material/<projekt>/` und bleiben aus dem Repository heraus; welcher
+Ordner das ist, steht im Kopf der Schnittliste unter `quellen`. Fehlt das Feld,
+brechen `render.py` und `validate_cutlist.py` mit Meldung ab, statt still auf
+einen falschen Ordner zu zeigen.
+
+Am Code ist für ein neues Projekt nichts zu ändern.
 
 ## Umgebung
 
@@ -91,8 +100,8 @@ Achtung: PowerShells `>` schreibt UTF-8 **mit BOM**. JSON danach mit
 ### 2. Material sichten — Claude schaut wirklich hin
 
 ```
-python make_contactsheets.py <projekt> 3 5              # Überblick
-python make_contactsheets.py <projekt> 8 6 <filter>     # dicht, gefiltert
+python make_contactsheets.py material/<projekt> 3 5           # Überblick
+python make_contactsheets.py material/<projekt> 8 6 <filter>  # dicht, gefiltert
 ```
 
 Baut beschriftete Kontaktbögen in `sheets/<projekt>/`. Diese Bilder liest
@@ -180,15 +189,163 @@ verschiedene Dateinamen, sehen nebeneinander aber aus wie ein Fehlschnitt.
 kommt Quantisierungsdrift. Unter ~0,15 s erwischt man die falsche Seite und
 diagnostiziert einen Fehler, der nicht existiert.
 
+### 4a. Review-Schleife — nummeriert bis zur Freigabe
+
+Diese Regel gilt **für jedes Projekt**:
+
+- In jeder Feedbackrunde wird ausschließlich eine nummerierte Arbeitsfassung
+  ausgegeben. Unten rechts steht pro Einstellung eine große fortlaufende Zahl,
+  die framegenau dem Feld `n` der aktuellen Schnittliste entspricht.
+- Nach jedem Einfügen, Entfernen oder Verschieben von Einstellungen die Zahlen
+  aus der aktuellen Schnittliste neu erzeugen. Szenennummern aus älteren
+  Reviewfassungen gelten danach nicht automatisch weiter.
+- Keine zusätzliche unnummerierte Parallelfassung für die Abnahme rendern oder
+  ausgeben. Während der Iteration ist die Datei mit dem Zusatz
+  `_nummeriert` die einzige Reviewfassung.
+- Erst nach der ausdrücklichen finalen Freigabe des Bildschnitts einmalig die
+  saubere Endfassung ohne Zahlen rendern. Danach technische Endprüfung und
+  gegebenenfalls Veröffentlichungs-Export durchführen.
+- Falls ein technischer Zwischenschritt vorübergehend ein unbeschriftetes
+  Video erzeugt, ist es nur ein internes Hilfsartefakt und keine abzugebende
+  Fassung. Der Arbeitsablauf soll nach Möglichkeit direkt in die nummerierte
+  Reviewdatei rendern.
+
+## Export nach DaVinci Resolve
+
+Für den finalen Schnitt und die Farbkorrektur, nicht als Ersatz für die
+mp4-Kette oben. Zwei Skripte:
+
+```
+.venv\Scripts\python.exe resolve_prep_slowmo.py <projekt>/cutlist_vN.json
+```
+backt jede Zeitlupen-Einstellung zu einem ProRes-Zwischenclip (läuft normal
+in der Venv, außerhalb von Resolve). Danach `resolve_build.py` nach
+`%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Utility`
+kopieren, den Pfad zur Schnittliste am Kopf der Datei eintragen (Konstante
+`CUTLIST_PFAD`), Resolve öffnen, **Workspace > Scripts > resolve_build**. Das
+Skript legt selbst ein neues, durchnummeriertes Projekt an — es muss vorher
+kein leeres Projekt offen sein.
+
+Umgebung: DaVinci Resolve 21.0.4.5, freie Edition. Externes Scripting ist
+Studio-only und nicht verfügbar; Skripte, die über Workspace > Scripts
+laufen, funktionieren aber vollständig — Resolve stellt dort das globale
+`resolve`-Objekt selbst bereit, kein `GetResolve()`/`scriptapp()`-Umweg nötig.
+
+### Warum nicht FCPXML
+
+Erster Versuch: FCPXML 1.8 + `File > Import > Timeline`. Kam strukturell
+korrekt an (Reihenfolge, Längen, Musik auf A2, framegenau), aber Resolve
+verknüpfte die Clips nicht gegen den Media Pool — alle Clips blieben offline.
+Mit `importSourceClips=True` blieb die Timeline stattdessen komplett leer.
+Beides ließ sich mit einer korrekten, selbst validierten FCPXML-Datei nicht
+beheben — das Problem liegt in Resolves Konformierung, nicht in der Datei.
+
+Dazu kommt: FCPXML kennt keine Geschwindigkeitsänderung ohne
+`<adjust-timeMap>`, und die zwölf bis fünfzehn Zeitlupen-Einstellungen dieser
+Projekte sind kein Rand-, sondern der Hauptfall. Ein Export, der Zeitlupe
+nicht überträgt, ist für dieses Werkzeug wertlos.
+
+**Zweiter Versuch, direkt verworfen:** die Resolve-API mit expliziten
+`recordFrame`-Werten je Clip in einem `AppendToTimeline`-Aufruf zu füttern
+(so macht es ein früherer, nie getesteter Anlauf). Das Problem: die
+API-Dokumentation (`README.txt` im Scripting-SDK) sagt nicht, ob `recordFrame`
+absolut (inklusive des Timeline-Startcodes, oft `01:00:00:00` ≠ Frame 0) oder
+relativ zum Timeline-Anfang gezählt wird. Ungetestet ist das ein Fünfzig-
+Fünfzig-Risiko auf eine komplett falsch platzierte Timeline. `resolve_build.py`
+verzichtet deshalb ganz auf `recordFrame` und hängt die Einstellungen in
+Cutlist-Reihenfolge sequenziell an — das ist das dokumentierte und in allen
+Beispiel-Skripten des SDK vorgeführte Verhalten von `AppendToTimeline` und
+braucht diese Annahme nicht.
+
+### Warum die Zeitlupe vorgebacken wird, statt sie in Resolve zu setzen
+
+Geprüft (nicht vermutet): `README.txt` im Scripting-SDK
+(`%PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting`)
+listet unter „Looking up Timeline item properties" alle Schlüssel, die
+`TimelineItem.SetProperty()` akzeptiert — `RetimeProcess` ist dabei, das
+regelt aber nur die *Interpolationsart* eines schon bestehenden
+Geschwindigkeitswechsels (nearest/frame blend/optical flow), keinen
+`Speed`-Wert. Ein `ChangeSpeed()` oder vergleichbares gibt es in keiner
+Klasse. `CHANGELOG.txt` desselben SDK erwähnt „speed" oder „retime" an
+keiner Stelle. Es gibt also keine dokumentierte Möglichkeit, die
+Geschwindigkeit eines Timeline-Clips per Scripting zu setzen — unabhängig
+von freier oder Studio-Edition, das ist eine Lücke der Scripting-API selbst.
+
+Der zweite Grund: die Resolve-Timeline läuft in Quell-Framerate (50), nicht
+in der Render-Framerate (25). `render.py` erzeugt Zeitlupe kostenlos über den
+Framerate-*Unterschied* zwischen Quelle (50) und Ziel (25) — bei `tempo=0.5`
+landet zufällig jeder Quellframe auf genau einem Ausgabeframe. Läuft die
+Resolve-Timeline dagegen selbst mit 50fps, gibt es diesen Unterschied nicht
+mehr: der Trick greift nur noch bei `tempo=1.0`, also gar keiner Zeitlupe.
+Echte Verlangsamung braucht auf einer 50fps-Timeline mit 50fps-Quelle
+zwingend eine echte Geschwindigkeitsänderung — und genau die ist nicht
+scriptbar.
+
+**Lösung:** Zeitlupe vorab mit ffmpeg backen (`resolve_prep_slowmo.py`,
+dieselbe Filterkette wie `render.py` — `setpts` vor `fps`, `-ss`/`-t` vor
+`-i` — aber mit Ziel-Framerate = Quell-Framerate statt Render-Framerate, ohne
+Skalierung, als ProRes 422 HQ). `resolve_build.py` hängt diesen bereits
+verlangsamten Zwischenclip mit Tempo 1.0 in die Timeline — Resolve muss dann
+gar nichts mehr retimen. Nachteil: Farbkorrektur läuft für diese Einstellungen
+auf dem Zwischencodec, nicht auf der Kameradatei. Gemessen für
+`zelda/cutlist_v4.json` (15 Zeitlupen-Einstellungen, 2160×3840): **8,9 GB**
+Zwischenmaterial für rund 47 s Zeitlupenanteil. Bei Platzmangel
+`PRORES_PROFIL` am Kopf von `resolve_prep_slowmo.py` auf 2 (422 Standard) oder
+0 (Proxy) stellen.
+
+Nebeneffekt: Einstellungen in Echtzeit (`tempo` fehlt oder `1.0`) werden
+unverändert aus der Originaldatei gelesen — deren Originalton kommt beim
+Import automatisch mit in den Media Pool (Resolve importiert die ganze
+Datei). Die Zeitlupen-Zwischenclips haben bewusst keinen Ton (`-an`):
+zeitlupenverzerrter, tonhöhenverschobener Ton wäre ohnehin unbrauchbar, und
+für dieses Projekt ist der Originalton laut `PROJEKT.md` sowieso Wind.
+
+### Was `resolve_build.py` beim Bauen selbst prüft
+
+Kein Erfolg wird behauptet, ohne zurückgelesen zu haben: nach
+`AppendToTimeline` liest das Skript für jede Einstellung `GetDuration()`,
+`GetStart()` und `GetEnd()` aus der entstandenen Timeline zurück und
+vergleicht sie mit der aus der Schnittliste vorausberechneten Framezahl —
+inklusive Lückenprüfung zwischen aufeinanderfolgenden Einstellungen und
+Gesamtlänge gegen `ende_s`. Bei Abweichung wird das Projekt **nicht**
+gespeichert, sondern die konkrete Differenz gemeldet. `endFrame` in
+`AppendToTimeline`-Clip-Infos ist einschließlich gezählt — belegt durch den
+Kommentar im mitgelieferten Beispiel `7_add_subclips_to_timeline.py`
+(`{"startFrame": 0, "endFrame": 23}` wird dort als „frame 0 .. 23", also 24
+Frames, beschrieben).
+
+### Was getestet ist und was nicht
+
+Getestet: die ffmpeg-Kette in `resolve_prep_slowmo.py` (an echtem
+Zelda-Material gerechnet und mit `ffprobe -count_frames` nachgezählt — exakte
+Framezahl, kein Rundungsfehler); die Frame-Arithmetik und Dateisuche in
+`resolve_build.py` bis zu dem Punkt, an dem echtes Resolve gebraucht wird
+(per Test-Harness mit einem Fake-`resolve`-Objekt durchlaufen); die schnelle
+`nb_frames`-Gegenprobe der Zwischenclips per `ffprobe`.
+
+**Nicht getestet, weil nicht bedienbar:** alles ab dem Anlegen des
+Resolve-Projekts — `CreateProject`, `SetSetting("timelineFrameRate", …)`,
+`ImportMedia`, `CreateEmptyTimeline`, `AppendToTimeline` und die
+Rücklese-Prüfung selbst. Diese Aufrufe sind gegen die offizielle
+API-Dokumentation und deren eigene Beispiel-Skripte abgesichert, aber nicht
+in echtem Resolve gelaufen. Größtes verbleibendes Risiko: ob
+`AppendToTimeline` ohne `recordFrame` bei gemischten Medienquellen
+(Original + Zwischenclip) zuverlässig lückenlos aneinanderhängt. Die
+eingebaute Rücklese-Prüfung deckt das beim ersten echten Lauf auf, statt es
+stillschweigend falsch zu lassen.
+
 ## Neues Projekt aufsetzen
 
-1. Quellclips in einen eigenen Ordner, Musik nach `audio/`.
-2. `cutlist.vorlage.json` dorthin kopieren als `cutlist_v1.json`, Kopf
-   ausfüllen: `quellen`, `audio`, `ausgabe`, Auflösung, Framerate.
+1. Quellclips nach `material/<projekt>/`, Musik nach `audio/`.
+2. `cutlist.vorlage.json` nach `<projekt>/cutlist_v1.json` kopieren, Kopf
+   ausfüllen: `quellen` (= `material/<projekt>`), `audio`, `ausgabe`,
+   Auflösung, Framerate.
 3. `analyze_music.py`, dann `plan_raster.py` — Raster ableiten.
 4. Kontaktbögen bauen (erst grob, dann dicht), ansehen, Einstellungen setzen.
-5. `validate_cutlist.py`, rendern, `sheet_sequence.py`, iterieren.
-6. Befunde zum Material in `<projekt>/PROJEKT.md` festhalten.
+5. `validate_cutlist.py`, nummerierte Reviewfassung rendern,
+   `sheet_sequence.py`, `verify_cuts.py`, iterieren.
+6. Nach ausdrücklicher Freigabe einmalig die unnummerierte Endfassung rendern.
+7. Befunde zum Material in `<projekt>/PROJEKT.md` festhalten.
 
 Erkannt werden `.mp4 .mov .mts .mkv .avi`, Groß- und Kleinschreibung egal.
 
@@ -230,16 +387,23 @@ ist — das erledigt sich beim Schnitt nicht von selbst.
 
 ## Noch nicht gebaut
 
-- **Export in ein Schnittprogramm.** Der frühere FCPXML-Export und die
-  Resolve-Anbindung sind entfernt und werden neu gemacht.
-- **Originalton**, siehe oben.
+- **Originalton**, siehe oben. Gilt auch für den Resolve-Export: Musik wird
+  von `resolve_build.py` nicht in die Timeline gelegt, das ist von Hand
+  nachzutragen.
 - **Gemischte Seitenverhältnisse**, siehe oben.
+- **Geschwindigkeitsänderung per Resolve-API.** Siehe „Export nach DaVinci
+  Resolve" oben — die Scripting-API hat dafür keinen dokumentierten Weg,
+  daher der Umweg über vorgebackene Zwischenclips. Vor einem erneuten Versuch
+  erst `README.txt`/`CHANGELOG.txt` des Scripting-SDK auf eine neue
+  `Speed`-Eigenschaft oder `ChangeSpeed()`-Methode prüfen.
 
 ## Umgangsformen
 
 - **Quellmaterial nie verändern.** Alles Abgeleitete in eigene Ordner.
 - **Nur die Schnittliste von Hand ändern**, dann neu rendern. Nie im MP4
   herumfummeln.
+- **Während der Abnahme nur nummerierte Reviewfassungen.** Die unnummerierte
+  Endfassung wird erst nach ausdrücklicher finaler Freigabe gerendert.
 - **Behauptungen belegen.** Wenn der Schnitt sitzen soll: Frames ziehen und
   anschauen. Wenn von Drift die Rede ist: Segmentdauern messen. Vermutung und
   Messung auseinanderhalten und Korrekturen offen benennen.
