@@ -39,10 +39,9 @@ import sys
 from pathlib import Path
 
 # ProRes-Profil fuer die Zwischenclips: 0=Proxy, 1=LT, 2=422 Standard,
-# 3=422 HQ. HQ ist Standard - fuer 2160x3840@50 gemessen (zelda/cutlist_v4,
-# 15 Zeitlupen-Shots): rund 190 MB/s, macht 8,9 GB fuer 47s Zeitlupenanteil.
-# Bei Platzmangel auf 2 (422 Standard, ~2/3 der Groesse) oder 0 (Proxy,
-# deutlich kleiner, aber sichtbar weicheres Bild) stellen.
+# 3=422 HQ. HQ ist Standard und braucht viel Platz - bei 4K-Material einige
+# GB je Minute Zeitlupe. Bei Platzmangel auf 2 (etwa zwei Drittel der Groesse)
+# oder 0 (deutlich kleiner, aber sichtbar weicher) stellen.
 PRORES_PROFIL = 3
 
 ROOT = Path(__file__).parent
@@ -123,8 +122,7 @@ for idx, s in enumerate(shots):
         "-ss", f"{s['in']:.3f}", "-t", f"{quelle:.3f}", "-i", str(src),
         "-vf", vf,
         "-frames:v", str(frames),
-        "-an",  # kein Ton - Zeitlupenton waere tonhoehenverschoben und ist in
-                # diesem Projekt ohnehin unbrauchbar (Wind, siehe PROJEKT.md)
+        "-an",  # kein Ton - verlangsamter Ton waere tonhoehenverschoben
         "-c:v", "prores_ks", "-profile:v", str(PRORES_PROFIL), "-pix_fmt", "yuv422p10le",
         str(dst),
     ])

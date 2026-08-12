@@ -64,26 +64,28 @@ ffmpeg und ffprobe 7.1.1 sind im PATH. Shell ist PowerShell auf Windows.
 .venv\Scripts\python.exe make_contactsheets.py material/<projekt> 3 5
 .venv\Scripts\python.exe make_contactsheets.py material/<projekt> 8 6 <filter>
 #   -> sheets/<projekt>/*.png als Bilder ansehen, dann Schnittliste schreiben
-.venv\Scripts\python.exe validate_cutlist.py projekte/<projekt>/cutlist_v1.json
-.venv\Scripts\python.exe render.py           projekte/<projekt>/cutlist_v1.json
-.venv\Scripts\python.exe sheet_sequence.py   projekte/<projekt>/cutlist_v1.json
-.venv\Scripts\python.exe verify_cuts.py      projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe validate_cutlist.py      projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe render.py                projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe make_numbered_review.py  projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe sheet_sequence.py        projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe verify_cuts.py           projekte/<projekt>/cutlist_v1.json
 ```
 
 Die Schnittliste ist die einzige Quelle der Wahrheit. Alles andere wird daraus
 erzeugt. Nie am gerenderten MP4 herumschneiden.
 
-### Verbindlicher Review-Modus für alle Projekte
+### Abnahme immer mit Szenennummern
 
-- Während der Feedbackrunden wird nur eine **nummerierte Arbeitsfassung**
-  ausgegeben. Jede Einstellung trägt unten rechts eine große fortlaufende
-  Zahl aus dem Feld `n` der aktuellen Schnittliste.
-- Nach Änderungen wird die Nummerierung aus der neuen Schnittliste vollständig
-  neu erzeugt. Feedback bezieht sich immer auf die zuletzt ausgegebene
-  nummerierte Fassung.
-- Keine separate unnummerierte Parallelfassung pro Feedbackrunde rendern oder
-  ausgeben. Die **finale Version ohne Zahlen** entsteht erst einmalig nach der
-  ausdrücklichen Freigabe des Bildschnitts.
+`make_numbered_review.py` läuft **nach** `render.py`: Es liest die fertige
+Datei aus `ausgabe` und blendet je Einstellung die Nummer `n` ein. Ergebnis
+ist `<ausgabe>_nummeriert.mp4`.
+
+Diese Datei ist die, die man zeigt — Rückmeldungen lauten dann „ändere Szene
+3" statt einer Ortsbeschreibung. Nach jeder Änderung an der Schnittliste neu
+erzeugen, sonst stimmen die Zahlen nicht mehr. Die unnummerierte Endfassung
+schreibt `render.py` ohnehin; sie braucht keinen eigenen Schritt.
+
+`n` muss eindeutig sein — `validate_cutlist.py` prüft das.
 
 ## Sechs Dinge, die Zeit kosten, wenn man sie nicht weiß
 

@@ -41,6 +41,18 @@ fehler, hinweise = [], []
 pos = 0.0
 belegt = collections.defaultdict(list)
 
+# Die Szenennummer n muss eindeutig sein: render.py benennt die Segmente
+# danach (seg_NN.mp4) und wuerde bei einer Dopplung stillschweigend
+# ueberschreiben, und in Feedbackrunden ist n die gemeinsame Sprache zwischen
+# Mensch und Schnittliste. Aufsteigend ist nur wuenschenswert.
+nummern = [s["n"] for s in cfg["shots"]]
+doppelt = sorted({x for x in nummern if nummern.count(x) > 1})
+if doppelt:
+    fehler.append(f"Szenennummern doppelt vergeben: {doppelt}")
+if nummern != sorted(nummern):
+    hinweise.append("Szenennummern laufen nicht aufsteigend - erlaubt, aber "
+                    "erschwert die Verstaendigung ueber die Reviewfassung")
+
 if not SRC.is_dir():
     fehler.append(f"Quellordner fehlt: {SRC}")
 musik = ROOT / cfg["audio"]

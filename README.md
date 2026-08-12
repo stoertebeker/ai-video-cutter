@@ -82,10 +82,11 @@ eintragen.
 **5. Prüfen, rendern, kontrollieren.**
 
 ```
-.venv\Scripts\python.exe validate_cutlist.py projekte/<projekt>/cutlist_v1.json
-.venv\Scripts\python.exe render.py           projekte/<projekt>/cutlist_v1.json
-.venv\Scripts\python.exe sheet_sequence.py   projekte/<projekt>/cutlist_v1.json
-.venv\Scripts\python.exe verify_cuts.py      projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe validate_cutlist.py      projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe render.py                projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe make_numbered_review.py  projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe sheet_sequence.py        projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe verify_cuts.py           projekte/<projekt>/cutlist_v1.json
 ```
 
 `validate_cutlist.py` läuft Sekunden, ein Renderlauf Minuten — deshalb immer
@@ -93,20 +94,18 @@ zuerst prüfen. Es fängt Lücken in der Timeline, Clips, die über ihr Quellend
 hinauslesen, überlappende Mehrfachverwendungen desselben Clips und eine
 Dauersumme, die nicht zu `ende_s` passt. Dazu listet es ungenutzte Clips.
 
-**6. Nummerierte Reviewfassung und Freigabe.**
+**6. Abnahme mit Szenennummern.**
 
-Für alle Projekte gilt derselbe Abnahmeprozess:
+`make_numbered_review.py` ist ein **zweiter Schritt nach dem Rendern**: Es
+liest die fertige Datei aus `ausgabe` ein und blendet je Einstellung die
+Szenennummer `n` ein, framegenau an den Shotgrenzen. Ergebnis ist
+`<ausgabe>_nummeriert.mp4`.
 
-- Während der Feedbackrunden wird ausschließlich eine nummerierte
-  Arbeitsfassung ausgegeben. Jede Einstellung zeigt unten rechts eine große,
-  fortlaufende Zahl aus dem Feld `n` der aktuellen Schnittliste.
-- Nach Änderungen wird neu nummeriert. Änderungswünsche müssen sich auf die
-  zuletzt ausgegebene Reviewfassung beziehen.
-- Es wird nicht bei jeder Runde zusätzlich eine saubere Fassung ohne Zahlen
-  gerendert oder ausgegeben. Die nummerierte Datei mit dem Zusatz
-  `_nummeriert` ist die Abnahmefassung.
-- Erst nach ausdrücklicher finaler Freigabe wird einmalig die unnummerierte
-  Endfassung gerendert und technisch abschließend geprüft.
+Diese nummerierte Datei ist die Fassung, die man zur Abnahme zeigt — damit
+Rückmeldungen lauten „ändere Szene 3" statt „die Stelle mit dem Baum". Nach
+jeder Änderung an der Schnittliste neu erzeugen, sonst stimmen die Zahlen
+nicht mehr. Die unnummerierte Endfassung entsteht am Schluss von selbst: Es
+ist die Datei, die `render.py` ohnehin schreibt.
 
 ## Aufbau
 
@@ -117,7 +116,8 @@ noch Musik, Schnittlisten, Projektdokumentation oder fertige Videos.
 ```
                         ── im Repository ──
 *.py                    Werkzeuge, projektunabhängig
-cutlist.vorlage.json    Vorlage für neue Projekte
+cutlist.vorlage.json    Vorlage für die Schnittliste
+PROJEKT.vorlage.md      Vorlage für das Materialprotokoll
 README.md CLAUDE.md AGENTS.md    Doku
 
                         ── daneben, nicht versioniert ──
@@ -175,15 +175,18 @@ Im Kopf steht das Projekt: `quellen` (der Materialordner, z. B.
 Darunter die Einstellungen, je eine Zeile:
 
 ```json
-{"n": 17, "clip": "5V4A1347_rotated.MP4", "in": 0.40, "tempo": 0.5,
+{"n": 17, "clip": "DATEINAME.MP4", "in": 0.40, "tempo": 0.5,
  "schnitt_bei": 42.176, "dauer": 3.541,
- "idee": "AKT 5 DAS KOSTUEM - voller Takt in Zeitlupe. 0.4-2.2s ist der Bereich, in dem der Koecher scharf im Bild liegt."}
+ "idee": "Detail in Zeitlupe. ACHTUNG: nur 0.4-2.2s brauchbar, danach laeuft der Schwenk aus dem Motiv."}
 ```
 
-`in` ist der Einstiegszeitpunkt im Quellclip, `schnitt_bei` die Position auf der
-Timeline (lückenlos an die vorige Einstellung anschließend), `dauer` die Länge
-auf der Timeline. Die `idee` ist kein Zierrat — sie macht später
-nachvollziehbar, was beim Ändern kaputtgeht.
+`n` ist die Szenennummer — sie muss eindeutig sein, weil `render.py` die
+Segmente danach benennt und weil sie in Feedbackrunden die gemeinsame Sprache
+ist. `in` ist der Einstiegszeitpunkt im Quellclip, `schnitt_bei` die Position
+auf der Timeline (lückenlos an die vorige Einstellung anschließend), `dauer`
+die Länge auf der Timeline. Die `idee` ist kein Zierrat — sie macht später
+nachvollziehbar, was beim Ändern kaputtgeht, und unbrauchbare Clipbereiche
+gehören als `ACHTUNG:` genau dorthin.
 
 `tempo` ist optional und der wirksamste Hebel gegen Materialmangel: `0.5`
 halbiert die Geschwindigkeit, verbraucht wird `dauer × tempo`. Bei 50-fps-Quelle

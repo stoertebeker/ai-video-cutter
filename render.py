@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent
-# Schnittliste als Argument, sonst die Standardfassung. So koennen mehrere
-# Fassungen nebeneinander bestehen.
+# Schnittliste als Pflichtargument - so koennen mehrere Fassungen eines
+# Projekts nebeneinander bestehen.
 if len(sys.argv) < 2:
     raise SystemExit("Aufruf: render.py <projekt>/cutlist_vN.json")
 CUTLIST = Path(sys.argv[1])

@@ -61,7 +61,7 @@ if not clips:
 rows = []
 for clip in clips:
     dur = duration(clip)
-    name = clip.stem.replace("_rotated", "")
+    name = clip.stem
     tiles = []
     for i in range(FRAMES_PER_CLIP):
         # gleichmaessig verteilt, aber nicht ganz am Rand

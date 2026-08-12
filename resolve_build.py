@@ -39,7 +39,7 @@ from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # HIER ANPASSEN, falls nicht ueber die Konsole mit Argument aufgerufen:
-CUTLIST_PFAD = r"C:\Users\der_h\Documents\VScode\davinci\projekte\zelda\cutlist_v4.json"
+CUTLIST_PFAD = r"C:\Pfad\zur\werkzeugkette\projekte\<projekt>\cutlist_v1.json"
 # ---------------------------------------------------------------------------
 
 if len(sys.argv) > 1:
@@ -258,7 +258,7 @@ melden(f"Timeline angelegt: {timeline_name}")
 # Reihenfolge haengt jeden Clip lueckenlos ans Ende des vorigen an - das ist
 # genau das dokumentierte "Append"-Verhalten und braucht diese Annahme nicht.
 # mediaType=1 (nur Video): Originalton wird bewusst nicht mitgenommen, siehe
-# resolve_prep_slowmo.py - fuer dieses Projekt ohnehin unbrauchbar (Wind).
+# resolve_prep_slowmo.py. Wird Originalton gebraucht, ist das nachzuruesten.
 clip_infos = []
 for p in plan:
     clip_infos.append({

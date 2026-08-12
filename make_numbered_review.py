@@ -47,11 +47,13 @@ output.parent.mkdir(parents=True, exist_ok=True)
 ass_file = ROOT / "sheets" / f"review_numbers_{cutlist.stem}.ass"
 ass_file.parent.mkdir(parents=True, exist_ok=True)
 
-header = """[Script Info]
+# Bezugsaufloesung aus der Schnittliste, nicht festverdrahtet - sonst sitzen
+# die Zahlen bei hochkantem Material falsch.
+header = f"""[Script Info]
 Title: Fortlaufende Szenennummern
 ScriptType: v4.00+
-PlayResX: 1920
-PlayResY: 1080
+PlayResX: {int(cfg["breite"])}
+PlayResY: {int(cfg["hoehe"])}
 ScaledBorderAndShadow: yes
 
 [V4+ Styles]

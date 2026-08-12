@@ -52,7 +52,7 @@ d = ImageDraw.Draw(sheet)
 for i, (s, pfad, t) in enumerate(kacheln):
     x = (i % SPALTEN) * TILE_W
     y = (i // SPALTEN) * (tile_h + LABEL_H)
-    kurz = s["clip"].split("_")[0].replace("5V4A", "")
+    kurz = Path(s["clip"]).stem[:14]
     d.text((x + 4, y + 2), f"{s['n']:02d}  {kurz}", fill=(255, 220, 120))
     d.text((x + 4, y + 13), f"{t:.1f}s  {s['dauer']:.2f}s", fill=(140, 200, 255))
     sheet.paste(Image.open(pfad), (x, y + LABEL_H))

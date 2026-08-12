@@ -19,7 +19,8 @@ oder fertige Videos.
                              ── im Repository ──
 README.md                    Übersicht für Menschen
 CLAUDE.md AGENTS.md          Arbeitsanweisung für Agenten
-cutlist.vorlage.json         Vorlage für neue Projekte
+cutlist.vorlage.json         Vorlage für die Schnittliste
+PROJEKT.vorlage.md           Vorlage für das Materialprotokoll
 *.py                         Werkzeuge, projektunabhängig
 
                              ── daneben, nicht versioniert ──
@@ -82,9 +83,14 @@ registrieren.
 Die Musik gibt Länge und Schnittraster vor.
 
 ```
-yt-dlp -f bestaudio -x --audio-format wav -o "audio/<projekt>/scratch.%(ext)s" <URL>
-python analyze_music.py audio/<projekt>/scratch.wav > audio/<projekt>/analyse.json
+python analyze_music.py audio/<projekt>/track.wav > audio/<projekt>/analyse.json
 python plan_raster.py audio/<projekt>/analyse.json 4
+```
+
+Liegt die Musik noch nicht als Datei vor, holt `yt-dlp` einen Scratch-Track:
+
+```
+yt-dlp -f bestaudio -x --audio-format wav -o "audio/<projekt>/scratch.%(ext)s" <URL>
 ```
 
 `analyze_music.py` liefert Tempo, Beatzeiten, Onsets und RMS-Pegel je halbe
@@ -173,10 +179,11 @@ Länge, weil die Tonspur sie vorgibt.
 ### 4. Rendern und prüfen
 
 ```
-python validate_cutlist.py projekte/<projekt>/cutlist_v1.json   # IMMER vor dem Rendern
-python render.py           projekte/<projekt>/cutlist_v1.json
-python sheet_sequence.py   projekte/<projekt>/cutlist_v1.json
-python verify_cuts.py      projekte/<projekt>/cutlist_v1.json
+python validate_cutlist.py      projekte/<projekt>/cutlist_v1.json   # IMMER zuerst
+python render.py                projekte/<projekt>/cutlist_v1.json
+python make_numbered_review.py  projekte/<projekt>/cutlist_v1.json
+python sheet_sequence.py        projekte/<projekt>/cutlist_v1.json
+python verify_cuts.py           projekte/<projekt>/cutlist_v1.json
 ```
 
 `validate_cutlist.py` prüft: lückenlose Schnittpunkte, kein Clip liest über
@@ -199,22 +206,26 @@ verschiedene Dateinamen, sehen nebeneinander aber aus wie ein Fehlschnitt.
 kommt Quantisierungsdrift. Unter ~0,15 s erwischt man die falsche Seite und
 diagnostiziert einen Fehler, der nicht existiert.
 
-### 4a. Review-Schleife — nummeriert bis zur Freigabe
+### 4a. Abnahme mit Szenennummern
 
-Diese Regel gilt **für jedes Projekt**:
+`make_numbered_review.py` ist ein **zweiter Schritt nach dem Rendern**, kein
+Renderschalter: Es liest die fertige Datei aus `ausgabe`, blendet je
+Einstellung die Nummer `n` als Untertitel ein — framegenau an den Shotgrenzen
+— und schreibt `<ausgabe>_nummeriert.mp4`. Bild wird neu kodiert, Ton
+durchgereicht. Fehlt die gerenderte Datei, bricht es ab.
 
-- In jeder Feedbackrunde wird ausschließlich eine nummerierte Arbeitsfassung
-  ausgegeben. Unten rechts steht pro Einstellung eine große fortlaufende Zahl,
-  die framegenau dem Feld `n` der aktuellen Schnittliste entspricht.
-- Nach jedem Einfügen, Entfernen oder Verschieben von Einstellungen die Zahlen
-  aus der aktuellen Schnittliste neu erzeugen. Szenennummern aus älteren
-  Reviewfassungen gelten danach nicht automatisch weiter.
-- Keine zusätzliche unnummerierte Parallelfassung für die Abnahme rendern oder
-  ausgeben. Während der Iteration ist die Datei mit dem Zusatz
-  `_nummeriert` die einzige Reviewfassung.
-- Erst nach der ausdrücklichen finalen Freigabe des Bildschnitts einmalig die
-  saubere Endfassung ohne Zahlen rendern. Danach technische Endprüfung und
-  gegebenenfalls Veröffentlichungs-Export durchführen.
+Diese nummerierte Datei ist die, die man zur Abnahme zeigt. Der Grund ist
+schlicht: Rückmeldungen lauten damit „ändere Szene 3" statt „die Stelle nach
+dem Baum", und beide Seiten meinen dasselbe.
+
+Nach jeder Änderung an der Schnittliste neu erzeugen — verschobene oder
+eingefügte Einstellungen ändern die Zuordnung, alte Zahlen gelten nicht
+weiter. Die unnummerierte Endfassung braucht keinen eigenen Schritt: Sie ist
+die Datei, die `render.py` ohnehin schreibt.
+
+`n` muss eindeutig sein, sonst überschreiben sich Rendersegmente stillschweigend
+und die Verständigung bricht zusammen. `validate_cutlist.py` prüft das und
+weist zusätzlich darauf hin, wenn die Nummern nicht aufsteigend laufen.
 - Falls ein technischer Zwischenschritt vorübergehend ein unbeschriftetes
   Video erzeugt, ist es nur ein internes Hilfsartefakt und keine abzugebende
   Fassung. Der Arbeitsablauf soll nach Möglichkeit direkt in die nummerierte
@@ -306,7 +317,8 @@ Beim Rendern nimmt Resolve wieder die Originaldateien.
 5. `validate_cutlist.py`, nummerierte Reviewfassung rendern,
    `sheet_sequence.py`, `verify_cuts.py`, iterieren.
 6. Nach ausdrücklicher Freigabe einmalig die unnummerierte Endfassung rendern.
-7. Befunde zum Material in `projekte/<projekt>/PROJEKT.md` festhalten.
+7. Befunde zum Material in `projekte/<projekt>/PROJEKT.md` festhalten —
+   `PROJEKT.vorlage.md` als Gerüst kopieren.
 
 Erkannt werden `.mp4 .mov .mts .mkv .avi`, Groß- und Kleinschreibung egal.
 
