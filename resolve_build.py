@@ -39,17 +39,31 @@ from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # HIER ANPASSEN, falls nicht ueber die Konsole mit Argument aufgerufen:
-CUTLIST_PFAD = r"C:\Users\der_h\Documents\VScode\davinci\zelda\cutlist_v4.json"
+CUTLIST_PFAD = r"C:\Users\der_h\Documents\VScode\davinci\projekte\zelda\cutlist_v4.json"
 # ---------------------------------------------------------------------------
 
 if len(sys.argv) > 1:
     CUTLIST_PFAD = sys.argv[1]
 
 CUTLIST = Path(CUTLIST_PFAD)
-# Projektwurzel = der Ordner, der den Projektordner enthaelt (der Ordner, in
-# dem cutlist_*.json liegt, liegt direkt unter der Wurzel - selbe Annahme wie
-# bei allen anderen Skripten dieser Werkzeugkette).
-ROOT = CUTLIST.parent.parent
+
+# Projektwurzel suchen, statt eine feste Verschachtelungstiefe anzunehmen.
+# Dieses Skript laeuft aus Resolves Scripts-Ordner, kann sich also nicht an
+# der eigenen Lage orientieren. Erkennungsmerkmal ist cutlist.vorlage.json,
+# die nur im Wurzelverzeichnis der Werkzeugkette liegt. Eine feste Annahme wie
+# CUTLIST.parent.parent bricht, sobald die Ablage sich aendert - genau das ist
+# beim Umzug der Schnittlisten nach projekte/<name>/ passiert.
+ROOT = None
+for kandidat in CUTLIST.resolve().parents:
+    if (kandidat / "cutlist.vorlage.json").is_file():
+        ROOT = kandidat
+        break
+if ROOT is None:
+    raise SystemExit(
+        f"Projektwurzel nicht gefunden: oberhalb von {CUTLIST} liegt kein "
+        f"Ordner mit cutlist.vorlage.json. Liegt die Schnittliste ausserhalb "
+        f"der Werkzeugkette?"
+    )
 
 
 def melden(*teile):
@@ -259,6 +273,41 @@ timeline_items = mediaPool.AppendToTimeline(clip_infos)
 if not timeline_items:
     abbrechen("AppendToTimeline hat nichts zurueckgegeben - Timeline ist leer geblieben.")
 
+# --- 5b) Musik auf A1 ------------------------------------------------------
+#         Eigener AppendToTimeline-Aufruf mit mediaType=2 (nur Audio). A1 ist
+#         zu diesem Zeitpunkt leer, weil die Videoclips mit mediaType=1
+#         eingefuegt wurden - der Ton landet damit bei Frame 0 und nicht
+#         hinter irgendetwas.
+musik_item = None
+gesamt_soll = sum(p["frames"] for p in plan)
+if "audio" in cfg:
+    musik_pfad = ROOT / cfg["audio"]
+    if not musik_pfad.is_file():
+        abbrechen(f"Musikdatei fehlt: {musik_pfad}")
+    ergebnis = mediaPool.ImportMedia([str(musik_pfad)])
+    if not ergebnis:
+        abbrechen(f"Import der Musikdatei fehlgeschlagen: {musik_pfad}")
+    musik_pool_item = ergebnis[0]
+
+    # Die Musik ist in der Regel laenger als der Film und wird auf die
+    # Timeline-Laenge beschnitten - genauso wie render.py sie per atrim auf
+    # ende_s kuerzt.
+    musik_items = mediaPool.AppendToTimeline([{
+        "mediaPoolItem": musik_pool_item,
+        "startFrame": 0,
+        "endFrame": gesamt_soll - 1,   # einschliesslich, siehe oben
+        "mediaType": 2,
+        "trackIndex": 1,
+    }])
+    if not musik_items:
+        melden("HINWEIS: Musik konnte nicht auf A1 gelegt werden. Die Datei "
+               "liegt im Media Pool und ist von Hand einzufuegen.")
+    else:
+        musik_item = musik_items[0]
+        melden(f"Musik auf A1: {musik_pfad.name}")
+else:
+    melden("HINWEIS: Kein Feld 'audio' in der Schnittliste - keine Musik eingefuegt.")
+
 # --- 6) Ruecklesen und gegen den Plan pruefen, statt Erfolg zu behaupten -
 melden("\n--- Pruefung: Timeline gegen Schnittliste ---")
 probleme = []
@@ -299,6 +348,22 @@ if gesamt_frames != erwartete_gesamtframes:
         f"({gesamt_frames / QUELL_FPS:.3f}s)"
     )
 
+# Musik ebenfalls zurueckgelesen statt nur eingefuegt und gehofft.
+if "audio" in cfg:
+    if musik_item is None:
+        probleme.append("Musik wurde nicht auf A1 eingefuegt.")
+    else:
+        m_start, m_dauer = musik_item.GetStart(), musik_item.GetDuration()
+        melden(f"  Musik    {Path(cfg['audio']).name:28s} "
+               f"{'A1':8s}  Timeline {m_start}-{musik_item.GetEnd()} "
+               f"({m_dauer} Frames)")
+        if m_start != 0:
+            probleme.append(f"Musik beginnt bei Frame {m_start} statt 0")
+        if m_dauer != gesamt_soll:
+            probleme.append(
+                f"Musik: erwartet {gesamt_soll} Frames, Timeline zeigt {m_dauer}"
+            )
+
 melden(f"\nGesamt: {gesamt_frames} Frames = {gesamt_frames / QUELL_FPS:.3f}s "
        f"(Schnittliste: {ENDE:.3f}s)")
 
@@ -312,5 +377,5 @@ if probleme:
 projectManager.SaveProject()
 melden(f"\nOK - {len(plan)} Einstellungen, {gesamt_frames} Frames "
        f"({gesamt_frames / QUELL_FPS:.3f}s), Projekt gespeichert: {projektname}")
-melden("Bild ist uebertragen. Ton/Musik ist NICHT Teil dieses Skripts - "
-       "Track dazu importieren und von Hand auf A1 legen.")
+melden("Bild auf V1, Musik auf A1. Der Originalton der Clips ist bewusst "
+       "nicht dabei (mediaType=1).")

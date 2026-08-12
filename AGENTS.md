@@ -119,13 +119,19 @@ erzeugt. Nie am gerenderten MP4 herumschneiden.
 
 ## Export nach DaVinci Resolve
 
-Zwei Skripte: `resolve_prep_slowmo.py` (normale Venv, backt Zeitlupe zu
-ProRes-Zwischenclips) und `resolve_build.py` (läuft **innerhalb** von
-Resolve über Workspace > Scripts, baut die Timeline per API statt per
-FCPXML-Import — der scheiterte an Resolves Konformierung). Details, warum
-FCPXML nicht geht und warum Resolves Scripting-API keine Möglichkeit hat,
-die Clip-Geschwindigkeit zu setzen, stehen in `CLAUDE.md` unter „Export nach
-DaVinci Resolve". Vor dem nächsten Versuch dort lesen, nicht neu recherchieren.
+```
+.venv\Scripts\python.exe resolve_prep_slowmo.py projekte/<projekt>/cutlist_vN.json
+```
+Danach `resolve_build.py` nach
+`%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Utility`
+kopieren, `CUTLIST_PFAD` setzen, in Resolve **Workspace > Scripts >
+resolve_build**. Es baut die Timeline per API und prüft sie danach gegen die
+Schnittliste.
+
+Verworfen und nicht erneut zu versuchen: FCPXML-Import (Resolve verknüpft die
+Clips nicht) und Geschwindigkeitsänderung per API (gibt es nicht, deshalb die
+vorgebackenen Zeitlupen). Begründungen in `CLAUDE.md` — dort lesen statt neu
+recherchieren.
 
 ## Was nicht gebaut ist
 

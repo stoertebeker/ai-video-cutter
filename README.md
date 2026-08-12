@@ -65,8 +65,8 @@ deshalb mit `utf-8-sig`.)
 **3. Material sichten.** Erst grob, dann dicht:
 
 ```
-.venv\Scripts\python.exe make_contactsheets.py material/zelda 3 5
-.venv\Scripts\python.exe make_contactsheets.py material/zelda 8 6 1364
+.venv\Scripts\python.exe make_contactsheets.py material/<projekt> 3 5
+.venv\Scripts\python.exe make_contactsheets.py material/<projekt> 8 6 <filter>
 ```
 
 Argumente: Quellordner, Frames je Clip, Clips je Bogen, optional ein
@@ -82,10 +82,10 @@ eintragen.
 **5. Prüfen, rendern, kontrollieren.**
 
 ```
-.venv\Scripts\python.exe validate_cutlist.py projekte/zelda/cutlist_v4.json
-.venv\Scripts\python.exe render.py           projekte/zelda/cutlist_v4.json
-.venv\Scripts\python.exe sheet_sequence.py   projekte/zelda/cutlist_v4.json
-.venv\Scripts\python.exe verify_cuts.py      projekte/zelda/cutlist_v4.json
+.venv\Scripts\python.exe validate_cutlist.py projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe render.py           projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe sheet_sequence.py   projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe verify_cuts.py      projekte/<projekt>/cutlist_v1.json
 ```
 
 `validate_cutlist.py` läuft Sekunden, ein Renderlauf Minuten — deshalb immer
@@ -143,12 +143,8 @@ eine davon, meldet `validate_cutlist.py` das vor dem Rendern.
 
 Die `.gitignore` ist als Positivliste gebaut: erst wird alles ausgeschlossen,
 dann gezielt das Werkzeug wieder hereingenommen. Ein neues Projekt bleibt
-dadurch von selbst außerhalb der Versionierung.
-
-Ein Projekt ist ein Ordner mit einer oder mehreren `cutlist_*.json` und einer
-`PROJEKT.md`, in der steht, was für dieses Material gilt: Drehorte,
-unbrauchbare Clipbereiche, Dopplungen. **Am Code ist für ein neues Projekt
-nichts zu ändern**, alles Projektabhängige steht im Kopf der Schnittliste.
+dadurch von selbst außerhalb der Versionierung. **Am Code ist für ein neues
+Projekt nichts zu ändern.**
 
 | Werkzeug | Was es tut |
 |---|---|
@@ -173,7 +169,7 @@ Freigabe als Endfassung und wird deshalb nicht parallel zu jeder Feedbackrunde
 erzeugt.
 
 Im Kopf steht das Projekt: `quellen` (der Materialordner, z. B.
-`material/zelda`), `audio`, `ausgabe`, `ende_s`, `breite`/`hoehe`, `fps`,
+`material/<projekt>`), `audio`, `ausgabe`, `ende_s`, `breite`/`hoehe`, `fps`,
 `quell_fps`, `video_ausblende_s` (optional dazu `video_einblende_s`).
 
 Darunter die Einstellungen, je eine Zeile:
@@ -196,29 +192,21 @@ Zeitlupe, nichts interpoliert.
 
 Alle Felder mit Erklärung stehen in `cutlist.vorlage.json`.
 
-## Beispiel: `zelda/`
+## Die PROJEKT.md
 
-Ein durchgearbeiteter Fall. 20 Clips von einem Cosplay-Shooting, 2160×3840
-hochkant, 50 fps, zusammen 159 Sekunden Material an zwei Drehorten plus einer
-Gruppe ortsneutraler Detailaufnahmen.
-
-Daraus vier Fassungen, jede mit eigener Musik und eigener Schnittliste. Die
-aktuelle `cutlist_v4.json` ist 68 Sekunden lang, 23 Einstellungen, 17 der 20
-Clips genutzt, ausgegeben als 1080×1920 bei 25 fps. Fünf Clips kommen mehrfach
-vor — mit verschiedenen Einstiegszeitpunkten und dazwischenliegenden
-Zwischenschnitten.
-
-`zelda/PROJEKT.md` zeigt, was so ein Materialprotokoll leistet: welche Clips
+Neben den Schnittlisten liegt je Projekt eine `PROJEKT.md` — das
+Materialprotokoll. Dort steht, was beim Sichten aufgefallen ist: welche Clips
 Outtakes sind, ab welcher Sekunde eine Schärfefahrt vorbei ist, welche Takes
-sich so ähnlich sehen, dass sie nie hintereinander stehen dürfen. Dieses Wissen
-in einer Datei zu halten, ist der Unterschied zwischen der zweiten und der
-vierten Fassung.
+sich so ähnlich sehen, dass sie nie hintereinander stehen dürfen, wo
+Drehort oder Kostüm wechseln.
+
+Das lohnt sich ab der zweiten Fassung. Ohne diese Datei sucht man dieselben
+unbrauchbaren Stellen bei jeder Iteration neu.
 
 ## Grenzen
 
-- **Kein Export in ein Schnittprogramm.** Der frühere FCPXML-Export und die
-  Resolve-Anbindung sind entfernt und werden neu gemacht. Ergebnis ist derzeit
-  ein fertiges MP4, keine Timeline zum Weiterbearbeiten.
+- **Export nur nach DaVinci Resolve**, siehe unten. Für andere Programme gibt
+  es keinen Weg; FCPXML wurde versucht und verworfen.
 - **Originalton wird verworfen.** `render.py` kodiert die Segmente mit `-an` und
   legt nur die Musik darunter. Für Material, bei dem gesprochen wird, ist das
   falsch — eine zweite Tonspur mit `amix` und Ducking ist nicht gebaut.
@@ -232,6 +220,28 @@ vierten Fassung.
   Kamerafahrten machte der Ausgleich das Bild schlechter, weil er die gewollte
   Bewegung nicht vom Wackeln trennen kann und dafür merklich hineinzoomen muss.
   Das gehört ins Schnitt- und Korrekturprogramm.
+
+## Export nach DaVinci Resolve
+
+Für Farbkorrektur und Feinschliff. Zwei Schritte:
+
+```
+.venv\Scripts\python.exe resolve_prep_slowmo.py projekte/<projekt>/cutlist_vN.json
+```
+
+Dann `resolve_build.py` nach
+`%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Utility`
+kopieren, `CUTLIST_PFAD` oben in der Datei setzen, Resolve neu starten,
+**Workspace → Scripts → resolve_build**. Ausgabe in **Workspace → Console**.
+
+Das Skript legt ein Projekt an, baut die Timeline, legt die Musik auf A1 und
+prüft anschließend die fertige Timeline gegen die Schnittliste. Bei Abweichung
+speichert es nicht. Der Originalton der Clips wird nicht übertragen.
+
+Zeitlupe muss vorgebacken werden, weil Resolves API keine
+Geschwindigkeitsänderung setzen kann — das kostet Plattenplatz. Die Vorschau
+ruckelt bei großem Material; das betrifft nur die Wiedergabe, nicht den
+Export. Details in `CLAUDE.md`.
 
 Quellmaterial wird nie verändert; alles Abgeleitete landet in eigenen Ordnern.
 

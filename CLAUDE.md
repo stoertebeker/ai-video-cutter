@@ -236,113 +236,64 @@ kopieren, den Pfad zur Schnittliste am Kopf der Datei eintragen (Konstante
 Skript legt selbst ein neues, durchnummeriertes Projekt an — es muss vorher
 kein leeres Projekt offen sein.
 
-Umgebung: DaVinci Resolve 21.0.4.5, freie Edition. Externes Scripting ist
-Studio-only und nicht verfügbar; Skripte, die über Workspace > Scripts
-laufen, funktionieren aber vollständig — Resolve stellt dort das globale
-`resolve`-Objekt selbst bereit, kein `GetResolve()`/`scriptapp()`-Umweg nötig.
+Externes Scripting ist Studio-only. Über `Workspace > Scripts` gestartete
+Skripte laufen aber auch in der freien Edition — Resolve stellt dort das
+globale `resolve`-Objekt bereit, kein `GetResolve()`-Umweg nötig.
 
-### Warum nicht FCPXML
+Übertragen wird Bild auf V1 und Musik auf A1; der Originalton der Clips bleibt
+draußen. Nach dem Bauen liest das Skript die Timeline zurück und vergleicht
+Framezahl je Clip, lückenlosen Anschluss, Gesamtlänge und Lage der Musik mit
+der Schnittliste. Bei Abweichung meldet es Shot und Differenz und **speichert
+das Projekt nicht** — ein „OK" am Ende ist damit belastbar.
 
-Erster Versuch: FCPXML 1.8 + `File > Import > Timeline`. Kam strukturell
-korrekt an (Reihenfolge, Längen, Musik auf A2, framegenau), aber Resolve
-verknüpfte die Clips nicht gegen den Media Pool — alle Clips blieben offline.
-Mit `importSourceClips=True` blieb die Timeline stattdessen komplett leer.
-Beides ließ sich mit einer korrekten, selbst validierten FCPXML-Datei nicht
-beheben — das Problem liegt in Resolves Konformierung, nicht in der Datei.
+### Zeitlupe muss vorgebacken werden
 
-Dazu kommt: FCPXML kennt keine Geschwindigkeitsänderung ohne
-`<adjust-timeMap>`, und die zwölf bis fünfzehn Zeitlupen-Einstellungen dieser
-Projekte sind kein Rand-, sondern der Hauptfall. Ein Export, der Zeitlupe
-nicht überträgt, ist für dieses Werkzeug wertlos.
+Resolves Scripting-API kann die Geschwindigkeit eines Timeline-Clips **nicht**
+setzen. `TimelineItem.SetProperty()` kennt nur `RetimeProcess`, das die
+Interpolationsart eines bereits bestehenden Wechsels regelt; ein `Speed`-Wert
+oder `ChangeSpeed()` existiert nirgends. Geprüft im Scripting-SDK unter
+`%PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting`.
 
-**Zweiter Versuch, direkt verworfen:** die Resolve-API mit expliziten
-`recordFrame`-Werten je Clip in einem `AppendToTimeline`-Aufruf zu füttern
-(so macht es ein früherer, nie getesteter Anlauf). Das Problem: die
-API-Dokumentation (`README.txt` im Scripting-SDK) sagt nicht, ob `recordFrame`
-absolut (inklusive des Timeline-Startcodes, oft `01:00:00:00` ≠ Frame 0) oder
-relativ zum Timeline-Anfang gezählt wird. Ungetestet ist das ein Fünfzig-
-Fünfzig-Risiko auf eine komplett falsch platzierte Timeline. `resolve_build.py`
-verzichtet deshalb ganz auf `recordFrame` und hängt die Einstellungen in
-Cutlist-Reihenfolge sequenziell an — das ist das dokumentierte und in allen
-Beispiel-Skripten des SDK vorgeführte Verhalten von `AppendToTimeline` und
-braucht diese Annahme nicht.
+Dazu kommt: Die Resolve-Timeline läuft in `quell_fps`. Der Trick aus
+`render.py`, Zeitlupe kostenlos aus dem Unterschied zwischen Quell- und
+Render-Framerate zu gewinnen, greift dort nicht mehr.
 
-### Warum die Zeitlupe vorgebacken wird, statt sie in Resolve zu setzen
+Deshalb `resolve_prep_slowmo.py`: gleiche ffmpeg-Kette wie `render.py`, aber
+Ziel-Framerate = Quell-Framerate und ohne Skalierung, als ProRes.
+`resolve_build.py` hängt den fertig verlangsamten Clip mit Tempo 1.0 ein.
 
-Geprüft (nicht vermutet): `README.txt` im Scripting-SDK
-(`%PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting`)
-listet unter „Looking up Timeline item properties" alle Schlüssel, die
-`TimelineItem.SetProperty()` akzeptiert — `RetimeProcess` ist dabei, das
-regelt aber nur die *Interpolationsart* eines schon bestehenden
-Geschwindigkeitswechsels (nearest/frame blend/optical flow), keinen
-`Speed`-Wert. Ein `ChangeSpeed()` oder vergleichbares gibt es in keiner
-Klasse. `CHANGELOG.txt` desselben SDK erwähnt „speed" oder „retime" an
-keiner Stelle. Es gibt also keine dokumentierte Möglichkeit, die
-Geschwindigkeit eines Timeline-Clips per Scripting zu setzen — unabhängig
-von freier oder Studio-Edition, das ist eine Lücke der Scripting-API selbst.
+Zwei Kosten: Die Farbkorrektur läuft für diese Einstellungen auf dem
+Zwischencodec statt auf der Kameradatei, und ProRes braucht **viel** Platz —
+bei 4K-Material einige GB je Minute Zeitlupe. `PRORES_PROFIL` am Kopf des
+Skripts senkt das (3 = 422 HQ, 2 = 422, 0 = Proxy).
 
-Der zweite Grund: die Resolve-Timeline läuft in Quell-Framerate (50), nicht
-in der Render-Framerate (25). `render.py` erzeugt Zeitlupe kostenlos über den
-Framerate-*Unterschied* zwischen Quelle (50) und Ziel (25) — bei `tempo=0.5`
-landet zufällig jeder Quellframe auf genau einem Ausgabeframe. Läuft die
-Resolve-Timeline dagegen selbst mit 50fps, gibt es diesen Unterschied nicht
-mehr: der Trick greift nur noch bei `tempo=1.0`, also gar keiner Zeitlupe.
-Echte Verlangsamung braucht auf einer 50fps-Timeline mit 50fps-Quelle
-zwingend eine echte Geschwindigkeitsänderung — und genau die ist nicht
-scriptbar.
+### Verworfen — nicht erneut versuchen
 
-**Lösung:** Zeitlupe vorab mit ffmpeg backen (`resolve_prep_slowmo.py`,
-dieselbe Filterkette wie `render.py` — `setpts` vor `fps`, `-ss`/`-t` vor
-`-i` — aber mit Ziel-Framerate = Quell-Framerate statt Render-Framerate, ohne
-Skalierung, als ProRes 422 HQ). `resolve_build.py` hängt diesen bereits
-verlangsamten Zwischenclip mit Tempo 1.0 in die Timeline — Resolve muss dann
-gar nichts mehr retimen. Nachteil: Farbkorrektur läuft für diese Einstellungen
-auf dem Zwischencodec, nicht auf der Kameradatei. Gemessen für
-`projekte/zelda/cutlist_v4.json` (15 Zeitlupen-Einstellungen, 2160×3840): **8,9 GB**
-Zwischenmaterial für rund 47 s Zeitlupenanteil. Bei Platzmangel
-`PRORES_PROFIL` am Kopf von `resolve_prep_slowmo.py` auf 2 (422 Standard) oder
-0 (Proxy) stellen.
+**FCPXML-Import.** Kam strukturell korrekt an, aber Resolve verknüpfte die
+Clips nicht gegen den Media Pool; mit `importSourceClips=True` blieb die
+Timeline leer. Das Problem liegt in Resolves Konformierung, nicht in der
+Datei. Ohne `<adjust-timeMap>` überträgt FCPXML zudem keine Zeitlupe.
 
-Nebeneffekt: Einstellungen in Echtzeit (`tempo` fehlt oder `1.0`) werden
-unverändert aus der Originaldatei gelesen — deren Originalton kommt beim
-Import automatisch mit in den Media Pool (Resolve importiert die ganze
-Datei). Die Zeitlupen-Zwischenclips haben bewusst keinen Ton (`-an`):
-zeitlupenverzerrter, tonhöhenverschobener Ton wäre ohnehin unbrauchbar, und
-für dieses Projekt ist der Originalton laut `PROJEKT.md` sowieso Wind.
+**`recordFrame` je Clip.** Die API-Dokumentation sagt nicht, ob absolut oder
+timeline-relativ gezählt wird. `resolve_build.py` verzichtet darauf und hängt
+sequenziell an — dokumentiertes Verhalten, das diese Annahme nicht braucht.
 
-### Was `resolve_build.py` beim Bauen selbst prüft
+**`endFrame` zählt einschließlich**: `{"startFrame": 0, "endFrame": 23}` sind
+24 Frames. Steht nur im SDK-Beispiel `7_add_subclips_to_timeline.py`.
 
-Kein Erfolg wird behauptet, ohne zurückgelesen zu haben: nach
-`AppendToTimeline` liest das Skript für jede Einstellung `GetDuration()`,
-`GetStart()` und `GetEnd()` aus der entstandenen Timeline zurück und
-vergleicht sie mit der aus der Schnittliste vorausberechneten Framezahl —
-inklusive Lückenprüfung zwischen aufeinanderfolgenden Einstellungen und
-Gesamtlänge gegen `ende_s`. Bei Abweichung wird das Projekt **nicht**
-gespeichert, sondern die konkrete Differenz gemeldet. `endFrame` in
-`AppendToTimeline`-Clip-Infos ist einschließlich gezählt — belegt durch den
-Kommentar im mitgelieferten Beispiel `7_add_subclips_to_timeline.py`
-(`{"startFrame": 0, "endFrame": 23}` wird dort als „frame 0 .. 23", also 24
-Frames, beschrieben).
+### Die Timeline ruckelt in der Vorschau
 
-### Was getestet ist und was nicht
+Bei hoher Auflösung und Bildrate schafft Resolve die Echtzeitwiedergabe oft
+nicht; es verwirft Bildframes, und der Ton stottert hörbar mit. **Das ist ein
+Wiedergabe-, kein Datenproblem** — der Export ist nicht betroffen. Wer die
+Ursache im Schnitt sucht, verliert Zeit; der schnellste Gegenbeweis ist das
+gerenderte MP4 aus derselben Schnittliste.
 
-Getestet: die ffmpeg-Kette in `resolve_prep_slowmo.py` (an echtem
-Zelda-Material gerechnet und mit `ffprobe -count_frames` nachgezählt — exakte
-Framezahl, kein Rundungsfehler); die Frame-Arithmetik und Dateisuche in
-`resolve_build.py` bis zu dem Punkt, an dem echtes Resolve gebraucht wird
-(per Test-Harness mit einem Fake-`resolve`-Objekt durchlaufen); die schnelle
-`nb_frames`-Gegenprobe der Zwischenclips per `ffprobe`.
-
-**Nicht getestet, weil nicht bedienbar:** alles ab dem Anlegen des
-Resolve-Projekts — `CreateProject`, `SetSetting("timelineFrameRate", …)`,
-`ImportMedia`, `CreateEmptyTimeline`, `AppendToTimeline` und die
-Rücklese-Prüfung selbst. Diese Aufrufe sind gegen die offizielle
-API-Dokumentation und deren eigene Beispiel-Skripte abgesichert, aber nicht
-in echtem Resolve gelaufen. Größtes verbleibendes Risiko: ob
-`AppendToTimeline` ohne `recordFrame` bei gemischten Medienquellen
-(Original + Zwischenclip) zuverlässig lückenlos aneinanderhängt. Die
-eingebaute Rücklese-Prüfung deckt das beim ersten echten Lauf auf, statt es
-stillschweigend falsch zu lassen.
+Abhilfe: `Wiedergabe → Proxy-Modus → Halbe Auflösung`; oder Media Pool
+markieren und **Optimierte Medien generieren** (Format und Auflösung in den
+Projekteinstellungen unter *Master-Einstellungen*), danach `Wiedergabe →
+Optimierte Medien verwenden`; oder `Wiedergabe → Render-Cache → Smart`.
+Beim Rendern nimmt Resolve wieder die Originaldateien.
 
 ## Neues Projekt aufsetzen
 
@@ -397,9 +348,7 @@ ist — das erledigt sich beim Schnitt nicht von selbst.
 
 ## Noch nicht gebaut
 
-- **Originalton**, siehe oben. Gilt auch für den Resolve-Export: Musik wird
-  von `resolve_build.py` nicht in die Timeline gelegt, das ist von Hand
-  nachzutragen.
+- **Originalton**, siehe oben. Gilt auch für den Resolve-Export.
 - **Gemischte Seitenverhältnisse**, siehe oben.
 - **Geschwindigkeitsänderung per Resolve-API.** Siehe „Export nach DaVinci
   Resolve" oben — die Scripting-API hat dafür keinen dokumentierten Weg,
