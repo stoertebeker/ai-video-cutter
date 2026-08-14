@@ -107,6 +107,26 @@ jeder Änderung an der Schnittliste neu erzeugen, sonst stimmen die Zahlen
 nicht mehr. Die unnummerierte Endfassung entsteht am Schluss von selbst: Es
 ist die Datei, die `render.py` ohnehin schreibt.
 
+## Titel und Abspann
+
+```
+.venv\Scripts\python.exe make_titles.py projekte/<projekt>/cutlist_vN.json
+```
+
+Ebenfalls ein zweiter Schritt nach dem Rendern, Ergebnis ist
+`<ausgabe>_titel.mp4`. **Die Texte stehen in der Schnittliste**, nicht im
+Skript — Feld `titel` mit `text`, optionaler `unterzeile`, `bei` und `dauer`.
+Schrift, Größen und Blenden stehen am Kopf von `make_titles.py` und gelten für
+alle Projekte.
+
+`nachlauf_schwarz_s` hängt Schwarzbild hinter `ende_s` an. Damit kann ein
+Abspann die Schlussszene noch begleiten und erst danach allein im Schwarzen
+stehen: `bei` vor `ende_s` legen, `dauer` darüber hinausreichen lassen.
+
+Für die Abnahme nimmt man `make_numbered_review.py`, für die Endfassung
+`make_titles.py` — beides zusammen ergibt keinen Sinn, Szenennummern gehören
+nicht in die fertige Fassung.
+
 ## Aufbau
 
 **Dieses Repository enthält ausschließlich das Werkzeug.** Projekte liegen
@@ -157,6 +177,7 @@ Projekt nichts zu ändern.**
 | `sheet_sequence.py` | ein Frame je Einstellung aus dem fertigen Video |
 | `verify_cuts.py` | Frames vor und nach jedem Schnitt |
 | `make_numbered_review.py` | erzeugt die nummerierte Abnahmefassung |
+| `make_titles.py` | brennt Titel ein, hängt Schwarz für den Abspann an |
 
 ### GPU oder CPU
 

@@ -13,6 +13,12 @@
   "video_ausblende_s": 3.0,
   "video_einblende_s": 0.0,
 
+  "titel": [
+    {"text": "TITEL DES FILMS", "unterzeile": "optionale zweite Zeile", "bei": 2.5, "dauer": 7.0},
+    {"text": "Name Jahr", "bei": 0.0, "dauer": 5.0}
+  ],
+  "nachlauf_schwarz_s": 0.0,
+
   "_felder": {
     "quellen": "Ordner mit den Quellclips, relativ zum Projektwurzelverzeichnis. Rohmaterial liegt unter material/<projekt>/. Nichts vom Projekt wird versioniert - auch diese Schnittliste nicht: sie gehoert nach projekte/<projekt>/ und bleibt wie das ganze Projekt lokal auf der Platte. Das Repository enthaelt ausschliesslich das Werkzeug.",
     "video_einblende_s": "Optional, 0 = keine Einblende.",
@@ -20,6 +26,12 @@
     "breite/hoehe": "Hochkant 1080x1920, Querformat 1920x1080. render.py skaliert hart auf dieses Ziel.",
     "fps": "Framerate der Timeline. Zeitlupe ist nur sauber, wenn quell_fps genau das Doppelte ist.",
     "video_ausblende_s": "Pflichtfeld. Laenge der Ausblende am Filmende.",
+    "titel": "Optional. Texteinblendungen fuer make_titles.py - ein zweiter Schritt nach dem Rendern, wie make_numbered_review.py. Ganz weglassen, wenn der Film keine Titel bekommt. Gestaltung (Schrift, Groesse, Blenden) steht am Kopf von make_titles.py und gilt projektuebergreifend.",
+    "titel[].text": "Die Zeile selbst.",
+    "titel[].unterzeile": "Optional. Kleiner gesetzt und 1,1s spaeter eingeblendet - erst der Ort, dann die Zugehoerigkeit.",
+    "titel[].bei": "Startzeitpunkt auf der Timeline, Sekunden - wie schnitt_bei gezaehlt.",
+    "titel[].dauer": "Standzeit in Sekunden, Ein- und Ausblende eingerechnet.",
+    "nachlauf_schwarz_s": "Optional, 0 = aus. Haengt Schwarzbild hinter ende_s an, damit ein Abspann noch stehen kann, nachdem das Bild ausgeblendet ist; der Ton laeuft dort stumm weiter. Ein Abspann, der die Szene noch begleiten und erst danach allein stehen soll, beginnt entsprechend vor ende_s: 'bei' frueher setzen, 'dauer' ueber ende_s hinausreichen lassen.",
     "shots[].n": "Szenennummer. Muss eindeutig sein - render.py benennt die Segmente danach, und in Feedbackrunden ist sie die gemeinsame Sprache ('aendere Szene 3'). make_numbered_review.py blendet genau diese Zahl ins Bild. Aufsteigend ist wuenschenswert, aber nicht Pflicht.",
     "shots[].in": "Einstiegszeitpunkt im Quellclip, Sekunden",
     "shots[].schnitt_bei": "Position auf der Timeline, Sekunden. Lueckenlos an die vorige Einstellung anschliessen.",

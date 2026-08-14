@@ -278,6 +278,42 @@ weist zusätzlich darauf hin, wenn die Nummern nicht aufsteigend laufen.
   Fassung. Der Arbeitsablauf soll nach Möglichkeit direkt in die nummerierte
   Reviewdatei rendern.
 
+### 4b. Titel und Abspann
+
+```
+python make_titles.py projekte/<projekt>/cutlist_vN.json
+```
+
+Wie `make_numbered_review.py` ein **zweiter Schritt nach dem Rendern**: liest
+die Datei aus `ausgabe`, brennt die Texte ein und schreibt
+`<ausgabe>_titel.mp4`. Die Quelle bleibt unangetastet.
+
+**Die Texte stehen in der Schnittliste, nicht im Skript** — Feld `titel` mit
+`text`, optionaler `unterzeile`, `bei` und `dauer`. Sonst wäre jede Fassung
+wieder Handarbeit, und genau das soll die Kette verhindern. Alles
+Gestalterische — Schrift, Größen, Sperrung, Blendendauer — steht dagegen am
+Kopf von `make_titles.py` und gilt projektübergreifend.
+
+`nachlauf_schwarz_s` hängt Schwarzbild hinter `ende_s` an. Das ist der Trick
+für einen Abspann, der die Schlussszene noch begleitet und erst danach allein
+steht: `bei` vor `ende_s` legen, `dauer` darüber hinausreichen lassen. Ohne
+den Nachlauf endet der Film in dem Moment, in dem das Bild schwarz wird — der
+Name wäre dann nur über dem ausblendenden Bild zu sehen.
+
+Rechenbeispiel bei `ende_s` 426 und `video_ausblende_s` 9: Ein Abspann mit
+`bei` 423 und `dauer` 5 läuft von 423 bis 428. Bis 426 liegt er über der
+ausblendenden Szene, danach zwei Sekunden im Schwarzen. `nachlauf_schwarz_s`
+3 gibt ihm den Platz dafür plus eine Sekunde Nachlauf.
+
+`make_titles.py` prüft vor dem Kodieren, dass kein Titel hinter dem Filmende
+liegt — sonst wäre er im Ergebnis unsichtbar, ohne dass jemand den Fehler
+bemerkt.
+
+Reihenfolge der Schritte: erst `render.py`, dann wahlweise
+`make_numbered_review.py` für die Abnahme **oder** `make_titles.py` für die
+Endfassung. Beide auf dieselbe gerenderte Datei anzuwenden ergibt keinen
+Sinn — Szenennummern gehören nicht in die Endfassung.
+
 ## Export nach DaVinci Resolve
 
 Für den finalen Schnitt und die Farbkorrektur, nicht als Ersatz für die
