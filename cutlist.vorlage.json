@@ -14,7 +14,7 @@
   "video_einblende_s": 0.0,
 
   "_felder": {
-    "quellen": "Ordner mit den Quellclips, relativ zum Projektwurzelverzeichnis. Rohmaterial liegt unter material/<projekt>/ und bleibt aus der Versionierung heraus; diese Schnittliste selbst gehoert nach <projekt>/ und wird versioniert.",
+    "quellen": "Ordner mit den Quellclips, relativ zum Projektwurzelverzeichnis. Rohmaterial liegt unter material/<projekt>/. Nichts vom Projekt wird versioniert - auch diese Schnittliste nicht: sie gehoert nach projekte/<projekt>/ und bleibt wie das ganze Projekt lokal auf der Platte. Das Repository enthaelt ausschliesslich das Werkzeug.",
     "video_einblende_s": "Optional, 0 = keine Einblende.",
     "ende_s": "Zielllaenge. Nach dem nutzbaren Ende der Musik bemessen, nicht nach der Dateilaenge - Ausblenden unter ca. -40 dB sind stumm.",
     "breite/hoehe": "Hochkant 1080x1920, Querformat 1920x1080. render.py skaliert hart auf dieses Ziel.",

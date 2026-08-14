@@ -17,6 +17,23 @@
 !/*.md
 !/cutlist.vorlage.json
 
+# Zurueckgenommen: projektbezogene Dateien, die faelschlich im
+# Wurzelverzeichnis landen koennten. Die beiden Ausnahmen oben gelten fuer
+# *jede* .py und .md hier - ohne diesen Block wuerde ein versehentlich hier
+# abgelegtes Materialprotokoll oder ein Hilfsskript mitversioniert.
+# Schnittlisten und PROJEKT.md gehoeren nach projekte/<name>/, Hilfsskripte
+# von Agenten ins Scratchpad.
+/PROJEKT.md
+/cutlist_*.json
+/analyse*.json
+/raster*.txt
+/cliplaengen*.txt
+/build_*.py
+/finish_*.py
+/scratch*.py
+/tmp*.py
+/test_*.py
+
 # Zur Erinnerung, was dadurch draussen bleibt:
 #   projekte/<name>/   Schnittlisten und PROJEKT.md
 #   material/<name>/   Quellclips
