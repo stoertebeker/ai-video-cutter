@@ -9,11 +9,15 @@ Fassung wieder Handarbeit. Zwei Felder im Kopf:
     "titel": [
       {"text": "MPS Luhmuehlen 2023", "unterzeile": "Heerlager X",
        "bei": 2.8, "dauer": 7.6},
-      {"text": "Name Fotografie 2026", "bei": 423.0, "dauer": 5.0}
+      {"text": "Name Fotografie 2026", "bei": 423.0, "dauer": 5.0,
+       "ausblende_ms": 250}
     ],
     "nachlauf_schwarz_s": 3.0
 
 `bei` und `dauer` zaehlen wie `schnitt_bei` in Sekunden auf der Timeline.
+`einblende_ms` und `ausblende_ms` sind optional und ueberschreiben je Titel
+die Blendendauer aus den Konstanten unten - gebraucht bei kurzen Fassungen,
+wo eine Sekunde Ausblende einen spuerbaren Teil des Abspanns frisst.
 `nachlauf_schwarz_s` haengt Schwarzbild hinten an, damit ein Abspann noch
 stehen kann, nachdem das Bild ausgeblendet ist - der Ton laeuft dort stumm
 weiter. Ohne das Feld endet der Film wie gerendert.
@@ -42,6 +46,11 @@ GROESSE_UNTERZEILE = 50
 SPERRUNG_TITEL = 6
 SPERRUNG_UNTERZEILE = 4
 # Weiche Blenden in Millisekunden. Titel duerfen nicht aufblitzen.
+# Das ist der Standard fuer einen Film normaler Laenge. Je Titel ueber
+# "einblende_ms"/"ausblende_ms" ueberschreibbar - anders als Schrift und
+# Groesse haengt die Blendendauer nicht am Haus-Stil, sondern an der
+# Filmlaenge: eine Sekunde ist bei sieben Minuten unauffaellig und bei einem
+# 23-Sekunden-Trailer ein Viertel des Abspanns.
 EINBLENDE_MS = 1000
 AUSBLENDE_MS = 900
 # Kontur haelt die Schrift auch ueber hellem Bild lesbar. Im Schwarzbild
@@ -107,6 +116,22 @@ for eintrag in titel:
             f"{bei + dauer:.2f}s, der Film ist aber nur {gesamt:.2f}s lang "
             f"(ende_s {ende:.2f} + nachlauf_schwarz_s {nachlauf:.2f})."
         )
+    # Blenden, die zusammen laenger sind als die Standzeit, hiessen: der
+    # Titel steht nie voll da. Das faellt im Ergebnis kaum auf und ist
+    # trotzdem falsch, deshalb hier abfangen.
+    blenden = (float(eintrag.get("einblende_ms", EINBLENDE_MS))
+               + float(eintrag.get("ausblende_ms", AUSBLENDE_MS)))
+    if blenden < 0 or eintrag.get("einblende_ms", 0) < 0 \
+            or eintrag.get("ausblende_ms", 0) < 0:
+        raise SystemExit(
+            f"Titel \"{eintrag['text']}\": Blendendauer darf nicht negativ sein."
+        )
+    if blenden > dauer * 1000:
+        raise SystemExit(
+            f"Titel \"{eintrag['text']}\": Ein- und Ausblende dauern zusammen "
+            f"{blenden / 1000:.2f}s, die Standzeit betraegt aber nur "
+            f"{dauer:.2f}s - der Titel stuende nie voll im Bild."
+        )
 
 mitte = hoehe / 2
 header = f"""[Script Info]
@@ -132,7 +157,9 @@ for eintrag in titel:
     dauer = float(eintrag["dauer"])
     ende_titel = bei + dauer
     unterzeile = eintrag.get("unterzeile")
-    fad = f"\\fad({EINBLENDE_MS},{AUSBLENDE_MS})"
+    ein_ms = int(eintrag.get("einblende_ms", EINBLENDE_MS))
+    aus_ms = int(eintrag.get("ausblende_ms", AUSBLENDE_MS))
+    fad = f"\\fad({ein_ms},{aus_ms})"
 
     if unterzeile:
         # Zweizeilig: Titel nach oben, Unterzeile nach unten ruecken, damit
@@ -148,7 +175,7 @@ for eintrag in titel:
         events.append(
             f"Dialogue: 0,{ass_time(bei + 1.1)},{ass_time(ende_titel)},Unterzeile,,0,0,0,,"
             f"{{\\pos({breite / 2:.0f},{y_unter:.0f})"
-            f"\\fad({EINBLENDE_MS},{AUSBLENDE_MS})}}{ass_escape(unterzeile)}"
+            f"{fad}}}{ass_escape(unterzeile)}"
         )
     else:
         events.append(

@@ -148,6 +148,12 @@ nicht. Die Tabelle ist die Vorlage für `schnitt_bei`.
 Achtung: PowerShells `>` schreibt UTF-8 **mit BOM**. JSON danach mit
 `encoding="utf-8-sig"` lesen, sonst scheitert `json.load`.
 
+**Und Schnittlisten nie über einen PowerShell-JSON-Umweg bearbeiten**
+(`Get-Content -Raw | ConvertFrom-Json | ConvertTo-Json | Out-File`). Windows
+PowerShell 5.1 liest UTF-8 ohne BOM als CP1252; aus `Luhmühlen` wird dabei
+`LuhmÃ¼hlen`, und im eingebrannten Titel fällt das erst am fertigen Video auf.
+Schnittlisten direkt als Datei schreiben.
+
 ### 2. Material sichten — Claude schaut wirklich hin
 
 ```
@@ -297,8 +303,15 @@ die Datei aus `ausgabe`, brennt die Texte ein und schreibt
 **Die Texte stehen in der Schnittliste, nicht im Skript** — Feld `titel` mit
 `text`, optionaler `unterzeile`, `bei` und `dauer`. Sonst wäre jede Fassung
 wieder Handarbeit, und genau das soll die Kette verhindern. Alles
-Gestalterische — Schrift, Größen, Sperrung, Blendendauer — steht dagegen am
-Kopf von `make_titles.py` und gilt projektübergreifend.
+Gestalterische — Schrift, Größen, Sperrung — steht dagegen am Kopf von
+`make_titles.py` und gilt projektübergreifend.
+
+**Die Blendendauer ist die Ausnahme davon.** Sie steht dort als Standard
+(`EINBLENDE_MS`, `AUSBLENDE_MS`), lässt sich aber je Titel über
+`einblende_ms`/`ausblende_ms` überschreiben — anders als eine Schriftwahl
+hängt sie nicht am Haus-Stil, sondern an der Filmlänge. Eine Sekunde
+Ausblende ist bei sieben Minuten unauffällig und bei einem 23-Sekunden-Trailer
+ein Viertel des Abspanns.
 
 `nachlauf_schwarz_s` hängt Schwarzbild hinter `ende_s` an. Das ist der Trick
 für einen Abspann, der die Schlussszene noch begleitet und erst danach allein
@@ -313,7 +326,8 @@ ausblendenden Szene, danach zwei Sekunden im Schwarzen. `nachlauf_schwarz_s`
 
 `make_titles.py` prüft vor dem Kodieren, dass kein Titel hinter dem Filmende
 liegt — sonst wäre er im Ergebnis unsichtbar, ohne dass jemand den Fehler
-bemerkt.
+bemerkt. Ebenso, dass Ein- und Ausblende zusammen kürzer sind als die
+Standzeit; sonst stünde der Titel nie voll im Bild.
 
 Reihenfolge der Schritte: erst `render.py`, dann wahlweise
 `make_numbered_review.py` für die Abnahme **oder** `make_titles.py` für die
