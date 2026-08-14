@@ -75,6 +75,7 @@ ffmpeg und ffprobe 7.1.1 sind im PATH. Shell ist PowerShell auf Windows.
 .venv\Scripts\python.exe make_contactsheets.py material/<projekt> 8 6 <filter>
 #   -> sheets/<projekt>/*.png als Bilder ansehen, dann Schnittliste schreiben
 .venv\Scripts\python.exe validate_cutlist.py      projekte/<projekt>/cutlist_v1.json
+.venv\Scripts\python.exe sheet_crop.py            projekte/<projekt>/cutlist_v1.json   # nur bei Formatwechsel
 .venv\Scripts\python.exe render.py                projekte/<projekt>/cutlist_v1.json
 .venv\Scripts\python.exe make_numbered_review.py  projekte/<projekt>/cutlist_v1.json
 .venv\Scripts\python.exe sheet_sequence.py        projekte/<projekt>/cutlist_v1.json
@@ -144,10 +145,26 @@ Clips nicht) und Geschwindigkeitsänderung per API (gibt es nicht, deshalb die
 vorgebackenen Zeitlupen). Begründungen in `CLAUDE.md` — dort lesen statt neu
 recherchieren.
 
+## Hochkant aus Querformat
+
+Steht in `breite`/`hoehe` ein anderes Seitenverhältnis als im Material,
+schneidet `render.py` zu (`crop` vor `scale`) statt zu verzerren. Wohin,
+sagen drei optionale Felder je Shot: `crop_x` (0.0 links … 1.0 rechts,
+Vorgabe 0.5), `crop_y` (0.0 oben … 1.0 unten) und `crop_zoom` (1.0 =
+größtmöglicher Ausschnitt, größer = enger). Bei Querformat in Hochkant wird
+die volle Bildhöhe genutzt — `crop_y` wirkt dort erst ab `crop_zoom` > 1.0.
+
+**Nicht raten:** `sheet_crop.py` zeichnet den Ausschnitt als Rahmen in den
+Quellframe und dunkelt außen ab. Bogen als Bild ansehen, dann je Szenennummer
+nachbessern. Bei gleichem Quell- und Zielformat ist der Filter die Identität,
+bestehende Projekte ändern sich nicht.
+
 ## Was nicht gebaut ist
 
 - Originalton der Clips — `render.py` verwirft ihn und legt nur Musik darunter
-- gemischte Seitenverhältnisse — es wird hart skaliert, nicht beschnitten
+- Rahmen statt beschneiden (Letterbox) — abweichende Formate werden
+  zugeschnitten; ebenso wenig gibt es einen animierten Schwenk (Ken Burns),
+  und der Resolve-Export kennt die crop-Felder nicht
 - **Bildstabilisierung** — war eingebaut, wurde bewusst wieder entfernt. Der
   Gewinn war gering, und bei absichtlichen Kamerafahrten verschlechterte der
   Ausgleich das Bild. Passiert im Schnittprogramm. Nicht ungefragt wieder

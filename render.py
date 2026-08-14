@@ -74,8 +74,34 @@ for idx, s in enumerate(shots):
         )
     timeline_duration = frames / FPS
     quelle = timeline_duration * tempo    # so viel Material wird verbraucht
+    # Bildausschnitt vor der Skalierung. Noetig, sobald Quell- und
+    # Zielseitenverhaeltnis auseinanderfallen (Querformat -> Hochkant): scale
+    # allein wuerde dann verzerren, pad ergaebe ein Briefmarkenbild.
+    # crop_x/crop_y sind der Mittelpunkt des Ausschnitts (0 = links/oben,
+    # 1 = rechts/unten), crop_zoom 1.0 der groesstmoegliche Ausschnitt im
+    # Zielformat. Relative Werte, damit die Schnittliste nicht an einer
+    # Quellaufloesung klebt.
+    crop_x = float(s.get("crop_x", 0.5))
+    crop_y = float(s.get("crop_y", 0.5))
+    zoom = float(s.get("crop_zoom", 1.0))
+    # Gerechnet wird in ffmpegs eigenen Variablen iw/ih statt per ffprobe -
+    # das spart einen Prozessaufruf je Segment und bleibt auch dann richtig,
+    # wenn die Clips unterschiedlich gross sind. Multiplikation vor Division
+    # (ih*W/H statt ih*(W/H)), sonst kommt bei gleichem Seitenverhaeltnis
+    # durch Fliesskommarundung 1919.9999 heraus und der Ausschnitt verliert
+    # zwei Pixel. So bleibt der Filter bei gleichem Verhaeltnis und Zoom 1.0
+    # exakt die Identitaet - bestehende Projekte aendern sich nicht.
+    # 2*floor(.../2) rundet auf gerade Kantenlaengen ab, die verlangt yuv420p.
+    max_w = f"min(iw,ih*{W}/{H})"
+    max_h = f"min(ih,iw*{H}/{W})"
+    # Ausdruecke in einfache Anfuehrungszeichen: die Kommas in min() waeren
+    # sonst Filtertrenner im Filtergraphen.
+    crop = (f"crop=w='2*floor({max_w}/{zoom:g}/2)'"
+            f":h='2*floor({max_h}/{zoom:g}/2)'"
+            f":x='2*floor((iw-ow)*{crop_x:g}/2)'"
+            f":y='2*floor((ih-oh)*{crop_y:g}/2)'")
     # setpts muss vor fps stehen, sonst wird erst dezimiert und dann gedehnt.
-    vf = (f"scale={W}:{H}:flags=lanczos,setpts=PTS/{tempo},"
+    vf = (f"{crop},scale={W}:{H}:flags=lanczos,setpts=PTS/{tempo},"
           f"fps={FPS},setsar=1")
     # -ss UND -t vor -i: beides sind hier Eingabe-Optionen. Stuende -t hinter
     # -i, wuerde es die Ausgabe begrenzen und die von setpts gedehnte
@@ -92,8 +118,11 @@ for idx, s in enumerate(shots):
     ])
     seg_files.append(dst)
     lupe = f"  [Zeitlupe {tempo:g}x, Quelle {quelle:.3f}s]" if tempo != 1.0 else ""
+    schnitt = ("" if (crop_x, crop_y, zoom) == (0.5, 0.5, 1.0)
+               else f"  [Ausschnitt x={crop_x:g} y={crop_y:g} zoom={zoom:g}]")
     print(f"Segment {s['n']}: {s['clip']} @ {s['in']:.2f}s, "
-          f"{timeline_duration:.3f}s / {frames} Frames{lupe}", file=sys.stderr)
+          f"{timeline_duration:.3f}s / {frames} Frames{lupe}{schnitt}",
+          file=sys.stderr)
 
 # 2) Concat
 listfile = SEG / "concat.txt"

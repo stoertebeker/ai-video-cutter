@@ -23,7 +23,7 @@
     "quellen": "Ordner mit den Quellclips, relativ zum Projektwurzelverzeichnis. Rohmaterial liegt unter material/<projekt>/. Nichts vom Projekt wird versioniert - auch diese Schnittliste nicht: sie gehoert nach projekte/<projekt>/ und bleibt wie das ganze Projekt lokal auf der Platte. Das Repository enthaelt ausschliesslich das Werkzeug.",
     "video_einblende_s": "Optional, 0 = keine Einblende.",
     "ende_s": "Zielllaenge. Nach dem nutzbaren Ende der Musik bemessen, nicht nach der Dateilaenge - Ausblenden unter ca. -40 dB sind stumm.",
-    "breite/hoehe": "Hochkant 1080x1920, Querformat 1920x1080. render.py skaliert hart auf dieses Ziel.",
+    "breite/hoehe": "Hochkant 1080x1920, Querformat 1920x1080. render.py schneidet auf dieses Seitenverhaeltnis zu (crop) und skaliert dann. Weicht das Ziel vom Quellformat ab, entscheidet crop_x je Shot ueber den Ausschnitt.",
     "fps": "Framerate der Timeline. Zeitlupe ist nur sauber, wenn quell_fps genau das Doppelte ist.",
     "video_ausblende_s": "Pflichtfeld. Laenge der Ausblende am Filmende.",
     "titel": "Optional. Texteinblendungen fuer make_titles.py - ein zweiter Schritt nach dem Rendern, wie make_numbered_review.py. Ganz weglassen, wenn der Film keine Titel bekommt. Gestaltung (Schrift, Groesse, Blenden) steht am Kopf von make_titles.py und gilt projektuebergreifend.",
@@ -37,6 +37,9 @@
     "shots[].schnitt_bei": "Position auf der Timeline, Sekunden. Lueckenlos an die vorige Einstellung anschliessen.",
     "shots[].dauer": "Laenge auf der Timeline, Sekunden",
     "shots[].tempo": "Optional. 0.5 = halbe Geschwindigkeit. verbraucht = dauer * tempo.",
+    "shots[].crop_x": "Optional, Vorgabe 0.5. Mittelpunkt des Bildausschnitts waagerecht: 0.0 = ganz links, 1.0 = ganz rechts. Wirkt nur, wenn breite/hoehe ein anderes Seitenverhaeltnis haben als die Quelle - dann wird zugeschnitten statt verzerrt. Relativ angegeben, damit die Schnittliste unabhaengig von der Quellaufloesung bleibt. Welcher Ausschnitt richtig ist, entscheidet das Bild: sheet_crop.py zeichnet ihn in den Quellframe.",
+    "shots[].crop_y": "Optional, Vorgabe 0.5. Dasselbe senkrecht: 0.0 = oben, 1.0 = unten. Bei Querformatquelle in Hochkantziel und crop_zoom 1.0 ohne Wirkung, weil dort die volle Bildhoehe genutzt wird - validate_cutlist.py weist darauf hin.",
+    "shots[].crop_zoom": "Optional, Vorgabe 1.0 = groesstmoeglicher Ausschnitt im Zielformat. Groesser heisst enger: 2.0 nimmt die halbe Kantenlaenge. Kostet Aufloesung, schafft aber erst den Spielraum, in dem crop_y wirkt.",
     "shots[].idee": "Warum die Einstellung hier steht. Kein Zierrat - macht beim Aendern nachvollziehbar, was kaputtgeht. Unbrauchbare Clipbereiche als ACHTUNG: notieren."
   },
 
@@ -44,6 +47,8 @@
     {"n": 1, "clip": "DATEINAME.MP4", "in": 0.0, "schnitt_bei": 0.0, "dauer": 3.5,
      "idee": "..."},
     {"n": 2, "clip": "DATEINAME.MP4", "in": 0.0, "tempo": 0.5, "schnitt_bei": 3.5, "dauer": 3.5,
-     "idee": "... (Beispiel mit Zeitlupe: verbraucht nur 1.75s Quellmaterial)"}
+     "idee": "... (Beispiel mit Zeitlupe: verbraucht nur 1.75s Quellmaterial)"},
+    {"n": 3, "clip": "DATEINAME.MP4", "in": 0.0, "schnitt_bei": 7.0, "dauer": 3.5, "crop_x": 0.3,
+     "idee": "... (Beispiel Hochkant: das Motiv steht links im Querformatbild, deshalb der Ausschnitt links der Mitte)"}
   ]
 }

@@ -94,6 +94,9 @@ zuerst prüfen. Es fängt Lücken in der Timeline, Clips, die über ihr Quellend
 hinauslesen, überlappende Mehrfachverwendungen desselben Clips und eine
 Dauersumme, die nicht zu `ende_s` passt. Dazu listet es ungenutzte Clips.
 
+Soll das Ergebnis ein anderes Seitenverhältnis haben als das Material, kommt
+`sheet_crop.py` dazu — siehe „Hochkant aus Querformat" weiter unten.
+
 **6. Abnahme mit Szenennummern.**
 
 `make_numbered_review.py` ist ein **zweiter Schritt nach dem Rendern**: Es
@@ -172,6 +175,7 @@ Projekt nichts zu ändern.**
 | `plan_raster.py` | Taktraster aus den erkannten Beats, mit Pegel |
 | `make_contactsheets.py` | Kontaktbögen aus den Quellclips |
 | `validate_cutlist.py` | prüft die Schnittliste vor dem Rendern |
+| `sheet_crop.py` | zeigt die gewählten Bildausschnitte im Quellbild |
 | `render.py` | Segmente kodieren, aneinanderhängen, Musik drunter |
 | `encoder.py` | Videoparameter an einer Stelle — GPU oder CPU |
 | `sheet_sequence.py` | ein Frame je Einstellung aus dem fertigen Video |
@@ -233,6 +237,32 @@ Zeitlupe, nichts interpoliert.
 
 Alle Felder mit Erklärung stehen in `cutlist.vorlage.json`.
 
+### Hochkant aus Querformat
+
+Steht in `breite`/`hoehe` ein anderes Seitenverhältnis als im Material — etwa
+1080×1920 für Reels aus 16:9-Aufnahmen —, schneidet `render.py` jede
+Einstellung zu, statt sie zu verzerren. Wohin, entscheiden drei optionale
+Felder je Shot:
+
+| Feld | Vorgabe | Bedeutung |
+|---|---|---|
+| `crop_x` | 0.5 | Mittelpunkt waagerecht, 0.0 = ganz links, 1.0 = ganz rechts |
+| `crop_y` | 0.5 | Mittelpunkt senkrecht, 0.0 = oben, 1.0 = unten |
+| `crop_zoom` | 1.0 | 1.0 = größtmöglicher Ausschnitt, größer = enger |
+
+Die Werte sind relativ, nicht in Pixeln — die Schnittliste bleibt dadurch
+unabhängig von der Quellauflösung. Bei gleichem Quell- und Zielverhältnis
+ändert der Zuschnitt nichts.
+
+Welcher Ausschnitt richtig ist, entscheidet das Bild: Bei einer Totale sitzt
+das Motiv selten mittig. `sheet_crop.py` zeichnet den gewählten Ausschnitt als
+Rahmen in den Quellframe und dunkelt alles außerhalb ab — ansehen, dann je
+Szenennummer nachbessern.
+
+```
+.venv\Scripts\python.exe sheet_crop.py projekte/<projekt>/cutlist_v1.json
+```
+
 ## Die PROJEKT.md
 
 Neben den Schnittlisten liegt je Projekt eine `PROJEKT.md` — das
@@ -251,8 +281,10 @@ unbrauchbaren Stellen bei jeder Iteration neu.
 - **Originalton wird verworfen.** `render.py` kodiert die Segmente mit `-an` und
   legt nur die Musik darunter. Für Material, bei dem gesprochen wird, ist das
   falsch — eine zweite Tonspur mit `amix` und Ducking ist nicht gebaut.
-- **Gemischte Seitenverhältnisse werden hart skaliert**, nicht beschnitten oder
-  gerahmt. Bei uneinheitlichem Quellformat verzerrt das Bild.
+- **Abweichende Seitenverhältnisse werden beschnitten, nicht gerahmt.** Ein
+  Letterbox-Rahmen ist nicht gebaut, ebenso wenig ein animierter Schwenk
+  innerhalb einer Einstellung (Ken Burns) — der Ausschnitt steht je Shot fest.
+  Der Resolve-Export überträgt ihn nicht.
 - **Zeitlupe nur bei passender Framerate.** Sauber ist sie, wenn `quell_fps`
   genau das Doppelte von `fps` ist (50→25, 60→30). Sonst interpoliert oder
   doppelt ffmpeg Frames.

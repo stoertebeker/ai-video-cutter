@@ -227,6 +227,7 @@ Länge, weil die Tonspur sie vorgibt.
 
 ```
 python validate_cutlist.py      projekte/<projekt>/cutlist_v1.json   # IMMER zuerst
+python sheet_crop.py            projekte/<projekt>/cutlist_v1.json   # nur bei Formatwechsel
 python render.py                projekte/<projekt>/cutlist_v1.json
 python make_numbered_review.py  projekte/<projekt>/cutlist_v1.json
 python sheet_sequence.py        projekte/<projekt>/cutlist_v1.json
@@ -242,6 +243,11 @@ Renderlauf dauert Minuten, die Prüfung Sekunden.
 per concat-Demuxer aneinander und legt die Musik mit Ausblende darunter.
 Einzelsegmente statt eines großen filter_complex, weil Fehler dann lokal
 bleiben und sich einzelne Segmente austauschen lassen.
+
+`sheet_crop.py` braucht nur die Quellclips und läuft deshalb **vor** dem
+Rendern. Es zeichnet je Einstellung den gewählten Bildausschnitt als Rahmen
+ins Quellbild — nötig, sobald Quell- und Zielformat auseinanderfallen, sonst
+überflüssig. Siehe „Wenn das Material anders ist".
 
 `sheet_sequence.py` zieht aus dem **fertigen Video** einen Frame je Einstellung.
 Schnellste Kontrolle der Abfolge — deckt Dopplungen auf, die in der
@@ -404,8 +410,9 @@ Beim Rendern nimmt Resolve wieder die Originaldateien.
    Auflösung, Framerate.
 3. `analyze_music.py`, dann `plan_raster.py` — Raster ableiten.
 4. Kontaktbögen bauen (erst grob, dann dicht), ansehen, Einstellungen setzen.
-5. `validate_cutlist.py`, nummerierte Reviewfassung rendern,
-   `sheet_sequence.py`, `verify_cuts.py`, iterieren.
+5. `validate_cutlist.py`, bei Formatwechsel zusätzlich `sheet_crop.py`,
+   nummerierte Reviewfassung rendern, `sheet_sequence.py`, `verify_cuts.py`,
+   iterieren.
 6. Nach ausdrücklicher Freigabe einmalig die unnummerierte Endfassung rendern.
 7. Befunde zum Material in `projekte/<projekt>/PROJEKT.md` festhalten —
    `PROJEKT.vorlage.md` als Gerüst kopieren.
@@ -414,19 +421,51 @@ Erkannt werden `.mp4 .mov .mts .mkv .avi`, Groß- und Kleinschreibung egal.
 
 ## Wenn das Material anders ist
 
-**Seitenverhältnis.** `breite`/`hoehe` umstellen. `render.py` skaliert hart auf
-dieses Ziel — bei gemischten Quellformaten wird verzerrt, nicht beschnitten.
-Für gemischtes Material den `scale`-Filter um
-`force_original_aspect_ratio=decrease` plus `pad` ergänzen.
+**Seitenverhältnis.** `breite`/`hoehe` umstellen. `render.py` schneidet jede
+Einstellung zuerst auf das Zielverhältnis zu (`crop`) und skaliert erst
+danach. Verzerrt wird dadurch nichts, auch nicht bei gemischten Quellformaten
+— was nicht ins Zielverhältnis passt, fällt weg. Wer stattdessen rahmen will
+(Letterbox), bräuchte `force_original_aspect_ratio=decrease` plus `pad`; das
+ist **nicht gebaut**.
 
 **Formatwechsel quer → hochkant** ist ein anderer Fall und wird von `pad`
 falsch gelöst: Querformatmaterial in einem 1080×1920-Rahmen ergibt damit ein
 Briefmarkenbild zwischen zwei schwarzen Flächen. Gebraucht wird ein
-Bildausschnitt, also `crop` vor dem `scale`. Damit steht aber die Frage im
-Raum, **welcher** Ausschnitt — bei einer Totale sitzt das Motiv selten mittig,
-und die Antwort ist je Einstellung eine andere. Das ist Handarbeit am Bild und
-nicht automatisierbar; ein Feld `crop_x` je Shot wäre der Weg, falls es
-gebraucht wird. **Nicht gebaut.**
+Bildausschnitt, also `crop` vor dem `scale` — **das ist gebaut.** `breite`/
+`hoehe` auf 1080×1920 stellen, den Rest regeln drei optionale Felder je Shot:
+
+| Feld | Vorgabe | Bedeutung |
+|---|---|---|
+| `crop_x` | 0.5 | Mittelpunkt waagerecht, 0.0 = ganz links, 1.0 = ganz rechts |
+| `crop_y` | 0.5 | Mittelpunkt senkrecht, 0.0 = oben, 1.0 = unten |
+| `crop_zoom` | 1.0 | 1.0 = größtmöglicher Ausschnitt im Zielformat, größer = enger |
+
+Relative Werte, keine Pixel — die Schnittliste bleibt dadurch unabhängig von
+der Quellauflösung. `render.py` rechnet die Ausschnittmaße in ffmpegs eigenen
+Variablen `iw`/`ih` aus, ohne ffprobe. Stimmen Quell- und Zielverhältnis
+überein und ist `crop_zoom` 1.0, ist der Filter exakt die Identität —
+bestehende Projekte ändern sich dadurch nicht.
+
+Bei Querformat in Hochkant nutzt der Ausschnitt die volle Bildhöhe; `crop_y`
+bleibt dort ohne Wirkung, bis `crop_zoom` über 1.0 den Spielraum dafür
+schafft. `validate_cutlist.py` sagt das, prüft die Wertebereiche und meldet
+auch den häufigsten Fehler: abweichendes Zielformat, aber nirgends ein
+`crop_x` gesetzt — dann steht alles auf Bildmitte.
+
+Die Frage bleibt, **welcher** Ausschnitt: Bei einer Totale sitzt das Motiv
+selten mittig, und die Antwort ist je Einstellung eine andere. Das ist
+Handarbeit am Bild und nicht automatisierbar. `sheet_crop.py` macht sie
+prüfbar — es zeichnet den gewählten Ausschnitt als Rahmen in den Quellframe
+und dunkelt alles außerhalb ab:
+
+```
+python sheet_crop.py projekte/<projekt>/cutlist_vN.json
+```
+
+Ergebnis nach `sheets/<projekt>/crop_<fassung>_N.png`, als Bild ansehen und je
+Szenennummer nachbessern („Szene 7 weiter nach links"). Ein animierter
+Schwenk innerhalb einer Einstellung (Ken Burns) ist **nicht gebaut** — der
+Ausschnitt steht je Shot fest.
 
 **Framerate.** Zeitlupe ist nur sauber, wenn Quell-fps genau das Doppelte der
 Timeline-fps sind (50→25, 60→30). Sonst interpoliert oder doppelt ffmpeg
@@ -460,7 +499,11 @@ ist — das erledigt sich beim Schnitt nicht von selbst.
 ## Noch nicht gebaut
 
 - **Originalton**, siehe oben. Gilt auch für den Resolve-Export.
-- **Gemischte Seitenverhältnisse**, siehe oben.
+- **Rahmen statt beschneiden** (Letterbox/Pillarbox). Abweichende Formate
+  werden zugeschnitten, siehe oben. Ebenso wenig gebaut ist ein animierter
+  Schwenk innerhalb einer Einstellung (Ken Burns) — der Ausschnitt steht je
+  Shot fest. Der Resolve-Export kennt die crop-Felder nicht: dort landet das
+  Material ungeschnitten, der Ausschnitt wird in Resolve gesetzt.
 - **Geschwindigkeitsänderung per Resolve-API.** Siehe „Export nach DaVinci
   Resolve" oben — die Scripting-API hat dafür keinen dokumentierten Weg,
   daher der Umweg über vorgebackene Zwischenclips. Vor einem erneuten Versuch
