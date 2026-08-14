@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import encoder
+
 ROOT = Path(__file__).parent
 # Schnittliste als Pflichtargument - so koennen mehrere Fassungen eines
 # Projekts nebeneinander bestehen.
@@ -84,7 +86,7 @@ for idx, s in enumerate(shots):
         "-vf", vf,
         "-frames:v", str(frames),
         "-an",
-        "-c:v", "libx264", "-preset", "slow", "-crf", "18",
+        *encoder.video_args(),
         "-pix_fmt", "yuv420p",
         str(dst),
     ])
@@ -116,7 +118,7 @@ run([
     f"[0:v]{video_filter}[v];"
     f"[1:a]atrim=0:{ende:.3f},afade=t=out:st={ende - 0.4:.3f}:d=0.4[a]",
     "-map", "[v]", "-map", "[a]",
-    "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p",
+    *encoder.video_args(), "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-b:a", "192k",
     "-t", f"{ende:.3f}",
     "-movflags", "+faststart",

@@ -12,6 +12,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import encoder
+
 
 ROOT = Path(__file__).parent
 
@@ -84,7 +86,7 @@ cmd = [
     "-i", str(source),
     "-vf", f"ass=filename='{ass_relative}'",
     "-map", "0:v:0", "-map", "0:a?",
-    "-c:v", "libx264", "-preset", "slow", "-crf", "18",
+    *encoder.video_args(),
     "-pix_fmt", "yuv420p",
     "-c:a", "copy",
     "-movflags", "+faststart",

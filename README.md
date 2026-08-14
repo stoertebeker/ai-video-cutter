@@ -153,9 +153,26 @@ Projekt nichts zu ändern.**
 | `make_contactsheets.py` | Kontaktbögen aus den Quellclips |
 | `validate_cutlist.py` | prüft die Schnittliste vor dem Rendern |
 | `render.py` | Segmente kodieren, aneinanderhängen, Musik drunter |
+| `encoder.py` | Videoparameter an einer Stelle — GPU oder CPU |
 | `sheet_sequence.py` | ein Frame je Einstellung aus dem fertigen Video |
 | `verify_cuts.py` | Frames vor und nach jedem Schnitt |
 | `make_numbered_review.py` | erzeugt die nummerierte Abnahmefassung |
+
+### GPU oder CPU
+
+Voreinstellung ist die GPU (`h264_nvenc`), gemessen rund **4× schneller** als
+x264 mit `preset slow`. Für die Endfassung lohnt der Wechsel auf CPU:
+
+```
+$env:ENCODER="cpu"; .venv\Scripts\python.exe render.py projekte/<projekt>/cutlist_vN.json
+```
+
+NVENC ist pro Bit schwächer als x264. In Reviewfassungen fällt das nicht auf,
+in dunklen Bildern — Nacht, Fackel- und Kerzenlicht — wird es als Banding
+sichtbar. GPU-Dateien sind außerdem rund 60 % größer.
+
+Braucht eine NVIDIA-Karte und ein ffmpeg mit NVENC. Fehlt beides, meldet
+`encoder.py` das im Klartext und nennt den CPU-Weg.
 
 ## Die Schnittliste
 

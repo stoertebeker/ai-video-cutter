@@ -75,6 +75,31 @@ Am Code ist für ein neues Projekt nichts zu ändern.
 
 Immer über die Venv aufrufen: `.venv\Scripts\python.exe <skript>.py`
 
+### Encoder: GPU oder CPU
+
+`encoder.py` hält die Videoparameter für `render.py` und
+`make_numbered_review.py` an **einer** Stelle. Das ist kein Selbstzweck:
+`render.py` kodiert jedes Segment einzeln und fügt sie per concat-Demuxer
+zusammen — das funktioniert nur, wenn alle Segmente exakt gleich kodiert sind.
+
+Voreinstellung ist **GPU** (`h264_nvenc`, rund 4× schneller als x264 mit
+`preset slow`, gemessen). Für die Endfassung auf CPU umschalten:
+
+```
+$env:ENCODER="cpu"; .venv\Scripts\python.exe render.py projekte/<p>/cutlist_vN.json
+```
+
+Der Grund für den Schalter: NVENC ist pro Bit schwächer als x264. Bei
+Reviewfassungen ist das gleichgültig, in dunklen Bildern — Nacht-, Fackel- und
+Kerzenlicht — wird es als Banding sichtbar. `-spatial-aq`/`-temporal-aq`
+dämpfen das, heben es aber nicht auf. GPU-Dateien werden zudem etwa 60 %
+größer als CPU-Dateien gleicher Qualitätsstufe.
+
+Ein Wechsel des Encoders mitten in einer Fassung ist unschädlich für den
+concat — aber die Segmente in `segments/<fassung>/` stammen dann aus
+verschiedenen Encodern. `render.py` löscht den Ordner ohnehin bei jedem Lauf
+neu, das Problem entsteht also nicht von selbst.
+
 Pakete via `pip install "kinocut[image,audio-enhanced,audio-analysis]" yt-dlp`.
 Mehrere Extras gehören in **einen** Aufruf — zwei getrennte Aufrufe
 installieren nur den letzten. Und `kinocut doctor` nennt für librosa das
