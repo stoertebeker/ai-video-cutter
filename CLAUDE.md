@@ -190,9 +190,21 @@ der Lautstärke erhöhen, beste Einstellung exakt auf den RMS-Peak, danach eine
 lange ruhige Einstellung zum Ausblenden. Ortsneutrale Detailaufnahmen taugen
 als Brücke zwischen zwei Drehorten.
 
-Zwei Einstellungen desselben Motivs nie direkt hintereinander — das liest sich
-als Fehlschnitt, nicht als Schnitt. Ein Zwischenschnitt genügt, um aus einer
-Dopplung zwei Momente zu machen.
+Zwei Einstellungen, die einander **zum Verwechseln ähneln**, nicht direkt
+hintereinander — das liest sich als Fehlschnitt, nicht als Schnitt. Gemeint
+sind zwei Takes derselben Situation aus fast gleicher Position: Der Sprung
+wirkt dann wie ein Wiedergabefehler. Im Schnitt heißt das Jump Cut, und die
+Faustregel dagegen ist der deutliche Wechsel von Blickwinkel oder
+Einstellungsgröße (klassisch etwa 30° Kamerawinkel). Ein Zwischenschnitt tut
+es auch.
+
+**Kein Verbot ist das für dasselbe Thema.** Mehrere Einstellungen eines
+Konzerts, eines Wettkampfs, eines Marktes hintereinander sind in einer Montage
+normal und oft gewollt — sie bauen einen Block auf, statt ihn zu zerstreuen.
+Verlangt der Mensch einen Cluster, ist der Cluster richtig; dann gilt nur
+noch, dass die Einstellungen darin unterscheidbar bleiben. Diese Regel ist
+eine gestalterische Faustregel, **keine Prüfregel** — `validate_cutlist.py`
+prüft sie nicht und kann sie nicht prüfen.
 
 ### 3b. Zeitlupe — gegen Materialmangel
 
