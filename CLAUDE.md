@@ -419,6 +419,15 @@ dieses Ziel — bei gemischten Quellformaten wird verzerrt, nicht beschnitten.
 Für gemischtes Material den `scale`-Filter um
 `force_original_aspect_ratio=decrease` plus `pad` ergänzen.
 
+**Formatwechsel quer → hochkant** ist ein anderer Fall und wird von `pad`
+falsch gelöst: Querformatmaterial in einem 1080×1920-Rahmen ergibt damit ein
+Briefmarkenbild zwischen zwei schwarzen Flächen. Gebraucht wird ein
+Bildausschnitt, also `crop` vor dem `scale`. Damit steht aber die Frage im
+Raum, **welcher** Ausschnitt — bei einer Totale sitzt das Motiv selten mittig,
+und die Antwort ist je Einstellung eine andere. Das ist Handarbeit am Bild und
+nicht automatisierbar; ein Feld `crop_x` je Shot wäre der Weg, falls es
+gebraucht wird. **Nicht gebaut.**
+
 **Framerate.** Zeitlupe ist nur sauber, wenn Quell-fps genau das Doppelte der
 Timeline-fps sind (50→25, 60→30). Sonst interpoliert oder doppelt ffmpeg
 Frames. Vorher mit `ffprobe` prüfen.
