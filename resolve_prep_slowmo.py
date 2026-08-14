@@ -52,8 +52,12 @@ if not CUTLIST.is_absolute():
     CUTLIST = ROOT / CUTLIST
 
 cfg = json.loads(CUTLIST.read_text(encoding="utf-8-sig"))
-if "quellen" not in cfg:
-    raise SystemExit(f"{CUTLIST.name}: Feld 'quellen' fehlt")
+for pflichtfeld in ("quellen", "quell_fps", "ende_s", "shots"):
+    if pflichtfeld not in cfg:
+        raise SystemExit(
+            f"{CUTLIST.name}: Feld '{pflichtfeld}' fehlt. Der Resolve-Export "
+            f"braucht es; die Vorlage cutlist.vorlage.json zeigt alle Felder."
+        )
 SRC = ROOT / cfg["quellen"]
 QUELL_FPS = float(cfg["quell_fps"])
 ENDE = float(cfg["ende_s"])
@@ -137,6 +141,33 @@ for idx, s in enumerate(shots):
           f"Quelle {s['in']:.2f}-{s['in']+quelle:.2f}s -> {frames} Frames "
           f"@ {QUELL_FPS:g}fps  [{status}]", file=sys.stderr)
     gebaut += 1
+
+
+# --- resolve_build.py bereitstellen ---------------------------------------
+# Damit niemand eine veraltete Kopie in Resolves Scripts-Ordner liegen hat
+# oder einen Pfad von Hand eintragen muss: Skript hinueberkopieren und den
+# Pfad zur Schnittliste danebenlegen. resolve_build.py liest ihn dort.
+def resolve_scripts_ordner() -> Path | None:
+    import os
+    appdata = os.environ.get("APPDATA")
+    if not appdata:
+        return None
+    p = (Path(appdata) / "Blackmagic Design" / "DaVinci Resolve" / "Support"
+         / "Fusion" / "Scripts" / "Utility")
+    return p if p.is_dir() else None
+
+
+ziel = resolve_scripts_ordner()
+if ziel is None:
+    print("\nHINWEIS: Resolves Scripts-Ordner nicht gefunden. resolve_build.py "
+          "von Hand dorthin kopieren und CUTLIST_PFAD eintragen.", file=sys.stderr)
+else:
+    shutil.copy2(ROOT / "resolve_build.py", ziel / "resolve_build.py")
+    (ziel / "resolve_cutlist.txt").write_text(
+        str(CUTLIST.resolve()), encoding="utf-8")
+    print(f"\nresolve_build.py nach {ziel} kopiert,", file=sys.stderr)
+    print(f"Schnittliste eingetragen: {CUTLIST.name}", file=sys.stderr)
+    print("In Resolve: Workspace > Scripts > resolve_build", file=sys.stderr)
 
 print(f"\n{gebaut} Zeitlupen-Zwischenclips in {OUT}", file=sys.stderr)
 print(f"{uebersprungen} Einstellungen ohne Zeitlupe - werden direkt aus dem "

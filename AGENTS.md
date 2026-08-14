@@ -124,11 +124,10 @@ schreibt `render.py` ohnehin; sie braucht keinen eigenen Schritt.
 ```
 .venv\Scripts\python.exe resolve_prep_slowmo.py projekte/<projekt>/cutlist_vN.json
 ```
-Danach `resolve_build.py` nach
-`%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Utility`
-kopieren, `CUTLIST_PFAD` setzen, in Resolve **Workspace > Scripts >
-resolve_build**. Es baut die Timeline per API und prüft sie danach gegen die
-Schnittliste.
+Dieser Aufruf backt die Zeitlupen vor und stellt `resolve_build.py` samt Pfad
+zur Schnittliste in Resolves Scripts-Ordner bereit. Danach in Resolve
+**Workspace > Scripts > resolve_build** — nichts von Hand einzutragen. Es baut
+die Timeline per API und prüft sie danach gegen die Schnittliste.
 
 Verworfen und nicht erneut zu versuchen: FCPXML-Import (Resolve verknüpft die
 Clips nicht) und Geschwindigkeitsänderung per API (gibt es nicht, deshalb die

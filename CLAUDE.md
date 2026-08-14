@@ -239,13 +239,20 @@ mp4-Kette oben. Zwei Skripte:
 ```
 .venv\Scripts\python.exe resolve_prep_slowmo.py projekte/<projekt>/cutlist_vN.json
 ```
-backt jede Zeitlupen-Einstellung zu einem ProRes-Zwischenclip (läuft normal
-in der Venv, außerhalb von Resolve). Danach `resolve_build.py` nach
-`%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Utility`
-kopieren, den Pfad zur Schnittliste am Kopf der Datei eintragen (Konstante
-`CUTLIST_PFAD`), Resolve öffnen, **Workspace > Scripts > resolve_build**. Das
-Skript legt selbst ein neues, durchnummeriertes Projekt an — es muss vorher
-kein leeres Projekt offen sein.
+
+Dieser eine Aufruf erledigt alles außerhalb von Resolve: Er backt jede
+Zeitlupen-Einstellung zu einem ProRes-Zwischenclip, kopiert `resolve_build.py`
+in Resolves Scripts-Ordner und legt den Pfad zur Schnittliste als
+`resolve_cutlist.txt` daneben.
+
+Danach in Resolve **Workspace > Scripts > resolve_build**. Nichts von Hand
+einzutragen, kein Projekt vorher zu öffnen — das Skript legt selbst eins an.
+Beim ersten Mal Resolve nach dem Kopieren einmal neu starten, sonst fehlt der
+Menüpunkt.
+
+Dass die Bereitstellung am Vorbereitungsschritt hängt, ist Absicht: So kann in
+Resolves Ordner keine veraltete Kopie liegenbleiben und kein Pfad auf ein
+früheres Projekt zeigen.
 
 Externes Scripting ist Studio-only. Über `Workspace > Scripts` gestartete
 Skripte laufen aber auch in der freien Edition — Resolve stellt dort das

@@ -232,10 +232,10 @@ Für Farbkorrektur und Feinschliff. Zwei Schritte:
 .venv\Scripts\python.exe resolve_prep_slowmo.py projekte/<projekt>/cutlist_vN.json
 ```
 
-Dann `resolve_build.py` nach
-`%APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Utility`
-kopieren, `CUTLIST_PFAD` oben in der Datei setzen, Resolve neu starten,
-**Workspace → Scripts → resolve_build**. Ausgabe in **Workspace → Console**.
+Dieser Aufruf backt die Zeitlupen vor **und** stellt `resolve_build.py` samt
+Pfad zur Schnittliste in Resolves Scripts-Ordner bereit. Danach in Resolve
+**Workspace → Scripts → resolve_build**, Ausgabe in **Workspace → Console**.
+Beim ersten Mal Resolve einmal neu starten, damit der Menüpunkt erscheint.
 
 Das Skript legt ein Projekt an, baut die Timeline, legt die Musik auf A1 und
 prüft anschließend die fertige Timeline gegen die Schnittliste. Bei Abweichung

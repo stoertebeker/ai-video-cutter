@@ -37,13 +37,47 @@ import subprocess
 import sys
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# HIER ANPASSEN, falls nicht ueber die Konsole mit Argument aufgerufen:
-CUTLIST_PFAD = r"C:\Pfad\zur\werkzeugkette\projekte\<projekt>\cutlist_v1.json"
-# ---------------------------------------------------------------------------
+# Normalerweise ist hier nichts einzutragen: resolve_prep_slowmo.py kopiert
+# dieses Skript in Resolves Scripts-Ordner und legt den Pfad zur Schnittliste
+# als resolve_cutlist.txt daneben. Nur wenn das fehlschlaegt, hier von Hand
+# einen Pfad eintragen - er hat dann Vorrang.
+CUTLIST_PFAD = ""
+
+
+def pfad_aus_datei() -> str:
+    """Liest den Pfad, den resolve_prep_slowmo.py hinterlegt hat."""
+    kandidaten = []
+    try:
+        kandidaten.append(Path(__file__).parent / "resolve_cutlist.txt")
+    except NameError:
+        pass  # __file__ ist nicht garantiert, wenn Resolve das Skript ausfuehrt
+    import os
+    appdata = os.environ.get("APPDATA")
+    if appdata:
+        kandidaten.append(
+            Path(appdata) / "Blackmagic Design" / "DaVinci Resolve" / "Support"
+            / "Fusion" / "Scripts" / "Utility" / "resolve_cutlist.txt")
+    for k in kandidaten:
+        if k.is_file():
+            eintrag = k.read_text(encoding="utf-8").strip()
+            if eintrag:
+                return eintrag
+    return ""
+
 
 if len(sys.argv) > 1:
     CUTLIST_PFAD = sys.argv[1]
+elif not CUTLIST_PFAD:
+    CUTLIST_PFAD = pfad_aus_datei()
+
+if not CUTLIST_PFAD:
+    raise SystemExit(
+        "Keine Schnittliste angegeben. Normalerweise legt "
+        "resolve_prep_slowmo.py den Pfad als resolve_cutlist.txt neben dieses "
+        "Skript - lass es einmal laufen:\n"
+        "  .venv\\Scripts\\python.exe resolve_prep_slowmo.py "
+        "projekte/<projekt>/cutlist_vN.json"
+    )
 
 CUTLIST = Path(CUTLIST_PFAD)
 
