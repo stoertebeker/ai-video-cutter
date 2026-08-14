@@ -1,6 +1,16 @@
 # AGENTS.md
 
-**Lies zuerst `CLAUDE.md` im selben Ordner.** Dort steht die vollständige
+## Zuerst: Werkzeugkette aktualisieren
+
+**Zu Beginn jeder Sitzung einmal `git pull` ausführen.** Die Werkzeuge werden
+weiterentwickelt; ohne Pull arbeitest du womöglich mit einem Stand, dem
+Funktionen oder Fehlerkorrekturen fehlen.
+
+Schlägt der Pull wegen lokaler Änderungen fehl: erst klären, was da geändert
+wurde, nicht blind überschreiben. Projektdateien sind davon nie betroffen —
+das Repository enthält nur das Werkzeug.
+
+**Lies dann `CLAUDE.md` im selben Ordner.** Dort steht die vollständige
 Werkzeugkette: Ablauf, Dramaturgie, Fallstricke. Diese Datei ist der Einstieg
 und wiederholt die Punkte, an denen man ohne Vorwissen scheitert.
 `README.md` richtet sich an Menschen und ist die kürzere Übersicht.

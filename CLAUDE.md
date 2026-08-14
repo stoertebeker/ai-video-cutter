@@ -9,6 +9,16 @@ Datei, die man anschauen kann — dadurch bleibt alles Kreative überprüfbar.
 
 > Andere Agenten finden ihren Einstieg in `AGENTS.md` daneben.
 
+## Zuerst: `git pull`
+
+**Zu Beginn jeder Sitzung einmal aktualisieren.** Die Werkzeugkette wird
+weiterentwickelt; ohne Pull fehlen dir möglicherweise Funktionen oder
+Fehlerkorrekturen, und du baust etwas nach, das es schon gibt.
+
+Schlägt der Pull wegen lokaler Änderungen fehl: erst klären, was geändert
+wurde, statt blind zu überschreiben. Projekte sind nie betroffen — das
+Repository enthält ausschließlich das Werkzeug.
+
 ## Aufbau
 
 **Das Git-Repository enthält ausschließlich das Werkzeug.** Kein Projekt landet
