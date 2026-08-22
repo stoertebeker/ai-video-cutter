@@ -167,6 +167,9 @@ bestehende Projekte ändern sich nicht.
   die `overlays`-Timeline, Resolve überträgt sie noch nicht
 - Mehrere Musiksegmente im Resolve-Export — die lokale MP4-Pipeline mischt
   die `musik`-Timeline samt Crossfades, Resolve kennt weiter nur `audio`
+- Clipwechsel-Blenden im Resolve-Export — die lokale MP4-Pipeline kann mit
+  `clipwechsel_blende_s` verschiedene Quelldateien weich verbinden; Resolve
+  uebertraegt diese Uebergaenge noch nicht
 - Rahmen statt beschneiden (Letterbox) — abweichende Formate werden
   zugeschnitten; ebenso wenig gibt es einen animierten Schwenk (Ken Burns),
   und der Resolve-Export kennt die crop-Felder nicht

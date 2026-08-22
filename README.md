@@ -242,10 +242,19 @@ Darunter die Einstellungen, je eine Zeile:
 `n` ist die Szenennummer — sie muss eindeutig sein, weil `render.py` die
 Segmente danach benennt und weil sie in Feedbackrunden die gemeinsame Sprache
 ist. `in` ist der Einstiegszeitpunkt im Quellclip, `schnitt_bei` die Position
-auf der Timeline (lückenlos an die vorige Einstellung anschließend), `dauer`
-die Länge auf der Timeline. Die `idee` ist kein Zierrat — sie macht später
+auf der Timeline und `dauer` die Länge auf der Timeline. Ohne Übergang schließt
+die nächste Einstellung lückenlos an. Mit `clipwechsel_blende_s` beginnt sie
+um diese Dauer früher und überlappt den Vorgänger. Die `idee` ist kein Zierrat — sie macht später
 nachvollziehbar, was beim Ändern kaputtgeht, und unbrauchbare Clipbereiche
 gehören als `ACHTUNG:` genau dorthin.
+
+`clipwechsel_blende_s` erzeugt eine weiche Bildblende ausschließlich zwischen
+verschiedenen Quelldateien. Direkt aufeinanderfolgende Shots derselben Datei
+bleiben harte, framegenaue Teilungen; dadurch erzeugt beispielsweise eine
+abschnittsweise `rotation` keinen künstlichen Übergang. Die überlappte Zeit
+verkürzt die Gesamtlänge und muss in `schnitt_bei` sowie `ende_s` eingerechnet
+sein. Originaltonsegmente können an denselben Grenzen mit ihren vorhandenen
+Fadefeldern überlappen.
 
 `tempo` ist optional und der wirksamste Hebel gegen Materialmangel: `0.5`
 halbiert die Geschwindigkeit, verbraucht wird `dauer × tempo`. Bei 50-fps-Quelle

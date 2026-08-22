@@ -9,6 +9,7 @@ from pathlib import Path
 import encoder
 import audio_timeline
 import overlay_timeline
+import transition_timeline
 
 ROOT = Path(__file__).parent
 # Schnittliste als Pflichtargument - so koennen mehrere Fassungen eines
@@ -32,6 +33,7 @@ W, H, FPS = cfg["breite"], cfg["hoehe"], cfg["fps"]
 ende = float(cfg["ende_s"])
 fade = float(cfg["video_ausblende_s"])
 fade_in = float(cfg.get("video_einblende_s", 0.0))
+transition = transition_timeline.duration(cfg)
 
 if SEG.exists():
     shutil.rmtree(SEG)
@@ -51,6 +53,7 @@ def run(args: list[str]) -> None:
 
 # 1) Jedes Segment einzeln und identisch kodieren
 seg_files = []
+seg_durations = []
 shots = cfg["shots"]
 for idx, s in enumerate(shots):
     src = SRC / s["clip"]
@@ -64,8 +67,11 @@ for idx, s in enumerate(shots):
     # gerundet, addierten sich die Teilfehler bis zum Filmende und spaete
     # Musikmarken koennten um mehrere Frames verfehlt werden.
     timeline_start = float(s["schnitt_bei"])
-    timeline_end = (float(shots[idx + 1]["schnitt_bei"])
-                    if idx + 1 < len(shots) else ende)
+    if transition > 0:
+        timeline_end = timeline_start + float(s["dauer"])
+    else:
+        timeline_end = (float(shots[idx + 1]["schnitt_bei"])
+                        if idx + 1 < len(shots) else ende)
     start_frame = int(timeline_start * FPS + 0.5)
     end_frame = int(timeline_end * FPS + 0.5)
     frames = end_frame - start_frame
@@ -125,6 +131,7 @@ for idx, s in enumerate(shots):
         str(dst),
     ])
     seg_files.append(dst)
+    seg_durations.append(timeline_duration)
     lupe = f"  [Zeitlupe {tempo:g}x, Quelle {quelle:.3f}s]" if tempo != 1.0 else ""
     schnitt = ("" if (crop_x, crop_y, zoom) == (0.5, 0.5, 1.0)
                else f"  [Ausschnitt x={crop_x:g} y={crop_y:g} zoom={zoom:g}]")
@@ -133,14 +140,60 @@ for idx, s in enumerate(shots):
           f"{timeline_duration:.3f}s / {frames} Frames{lupe}{schnitt}{drehung}",
           file=sys.stderr)
 
-# 2) Concat
-listfile = SEG / "concat.txt"
-listfile.write_text(
-    "".join(f"file '{p.as_posix()}'\n" for p in seg_files), encoding="utf-8"
-)
-stumm = SEG / "stumm.mp4"
-run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
-     "-i", str(listfile), "-c", "copy", str(stumm)])
+# 2) Harte Legacy-Timeline oder Clipgruppen mit weichen Uebergaengen.
+if transition > 0:
+    groups = transition_timeline.group_indices(shots)
+    group_files = []
+    group_durations = []
+    for group_number, indices in enumerate(groups, start=1):
+        if len(indices) == 1:
+            group_file = seg_files[indices[0]]
+        else:
+            group_list = SEG / f"group_{group_number:02d}.txt"
+            group_list.write_text(
+                "".join(f"file '{seg_files[index].as_posix()}'\n"
+                        for index in indices),
+                encoding="utf-8",
+            )
+            group_file = SEG / f"group_{group_number:02d}.mp4"
+            run([
+                "ffmpeg", "-y", "-loglevel", "error", "-f", "concat",
+                "-safe", "0", "-i", str(group_list), "-c", "copy",
+                str(group_file),
+            ])
+        group_files.append(group_file)
+        group_durations.append(sum(seg_durations[index] for index in indices))
+
+    video_inputs = [item for path in group_files for item in ("-i", str(path))]
+    video_input_count = len(group_files)
+    transition_filter, transition_duration = transition_timeline.filter_graph(
+        group_durations, transition
+    )
+    # Jede Clipgruppe beginnt und endet auf dem Frameraster. Die unabhaengige
+    # Rundung kann sich ueber viele Gruppen um Bruchteile eines Frames je
+    # Grenze aufsummieren, obwohl die Schnittliste sekundengenau stimmt.
+    frame_tolerance = (len(group_files) / 2 + 1) / FPS
+    if abs(transition_duration - ende) > frame_tolerance + 0.001:
+        raise SystemExit(
+            f"Uebergangstimeline ergibt {transition_duration:.3f}s, "
+            f"ende_s ist {ende:.3f}s"
+        )
+    print(
+        f"Uebergaenge: {video_input_count - 1} x {transition:g}s "
+        f"zwischen {video_input_count} Clipgruppen",
+        file=sys.stderr,
+    )
+else:
+    listfile = SEG / "concat.txt"
+    listfile.write_text(
+        "".join(f"file '{p.as_posix()}'\n" for p in seg_files), encoding="utf-8"
+    )
+    stumm = SEG / "stumm.mp4"
+    run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
+         "-i", str(listfile), "-c", "copy", str(stumm)])
+    video_inputs = ["-i", str(stumm)]
+    video_input_count = 1
+    transition_filter = ""
 
 # 3) Musik und optional unabhaengigen Originalton mischen, hart auf ende_s
 video_fades = []
@@ -149,6 +202,7 @@ if fade_in > 0:
 video_fades.append(f"fade=t=out:st={ende - fade:.3f}:d={fade:.3f}")
 video_filter = ",".join(video_fades)
 music_segments = audio_timeline.music_entries(cfg)
+music_first_input = video_input_count
 if music_segments:
     music_inputs = audio_timeline.music_input_args(cfg, ROOT)
     music_input_count = len(music_segments)
@@ -160,10 +214,11 @@ else:
     music_input_count = 1
 
 originalton = audio_timeline.entries(cfg)
-first_original_input = 1 + music_input_count
+first_original_input = music_first_input + music_input_count
 if originalton:
     audio_filter = audio_timeline.filter_graph(
-        cfg, ende, music_input=1, first_original_input=first_original_input
+        cfg, ende, music_input=music_first_input,
+        first_original_input=first_original_input
     )
     original_inputs = audio_timeline.input_args(cfg, SRC)
     print(
@@ -178,12 +233,13 @@ else:
     # Exakt der bisherige Filter: Alte Schnittlisten bleiben bitlogisch bei
     # stummem Bild plus Musik, statt unbemerkt neue Pegelwerte zu erhalten.
     audio_filter = (
-        f"[1:a]atrim=0:{ende:.3f},"
+        f"[{music_first_input}:a]atrim=0:{ende:.3f},"
         f"afade=t=out:st={ende - 0.4:.3f}:d=0.4[a]"
     )
     original_inputs = []
 
-overlay_first_input = 1 + music_input_count + len(originalton)
+overlay_first_input = (video_input_count + music_input_count
+                       + len(originalton))
 overlay_args, overlay_filter = overlay_timeline.prepare(
     cfg,
     ROOT,
@@ -193,14 +249,25 @@ overlay_args, overlay_filter = overlay_timeline.prepare(
     H,
 )
 if overlay_filter:
-    video_graph = f"[0:v]{video_filter}[video_basis];{overlay_filter}"
+    if transition_filter:
+        video_graph = (f"{transition_filter};"
+                       f"[video_timeline]tpad=stop_mode=clone:stop_duration=1,"
+                       f"{video_filter}[video_basis];"
+                       f"{overlay_filter}")
+    else:
+        video_graph = f"[0:v]{video_filter}[video_basis];{overlay_filter}"
     print(f"Overlays: {len(overlay_timeline.entries(cfg))}", file=sys.stderr)
 else:
-    video_graph = f"[0:v]{video_filter}[v]"
+    if transition_filter:
+        video_graph = (f"{transition_filter};"
+                       f"[video_timeline]tpad=stop_mode=clone:stop_duration=1,"
+                       f"{video_filter}[v]")
+    else:
+        video_graph = f"[0:v]{video_filter}[v]"
 
 run([
     "ffmpeg", "-y", "-loglevel", "error",
-    "-i", str(stumm),
+    *video_inputs,
     *music_inputs,
     *original_inputs,
     *overlay_args,

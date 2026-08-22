@@ -14,6 +14,7 @@ from pathlib import Path
 
 import audio_timeline
 import overlay_timeline
+import transition_timeline
 
 ROOT = Path(__file__).parent
 if len(sys.argv) < 2:
@@ -104,7 +105,10 @@ if "musik" not in cfg:
         if not musik.is_file():
             fehler.append(f"Musikdatei fehlt: {musik}")
 
-for s in cfg["shots"]:
+shots = cfg["shots"]
+fehler.extend(transition_timeline.validate(cfg, shots))
+
+for shot_index, s in enumerate(shots):
     pfad = SRC / s["clip"]
 
     rotation = s.get("rotation", 0)
@@ -195,7 +199,8 @@ for s in cfg["shots"]:
                 f"{s['clip']} ({a:.2f}-{b:.2f} vs {s['in']:.2f}-{ende:.2f})"
             )
     belegt[s["clip"]].append((s["in"], ende, s["n"]))
-    pos += s["dauer"]
+    pos = (float(s["schnitt_bei"]) + float(s["dauer"])
+           - transition_timeline.boundary_duration(cfg, shots, shot_index))
 
 
 def probe_audio(pfad: Path) -> tuple[float, bool]:
@@ -222,7 +227,9 @@ fehler.extend(overlay_fehler)
 hinweise.extend(overlay_hinweise)
 
 if abs(pos - float(cfg["ende_s"])) > 0.001:
-    fehler.append(f"Summe der Dauern {pos:.3f}s != ende_s {cfg['ende_s']}")
+    fehler.append(
+        f"Timeline-Ende nach Uebergaengen {pos:.3f}s != ende_s {cfg['ende_s']}"
+    )
 
 # Kein Fehler, aber fast immer ein Versehen: Das Ziel hat ein anderes
 # Seitenverhaeltnis als das Material, also wird beschnitten - und ohne crop_x

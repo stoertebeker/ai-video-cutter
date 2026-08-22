@@ -245,13 +245,18 @@ python sheet_sequence.py        projekte/<projekt>/cutlist_v1.json
 python verify_cuts.py           projekte/<projekt>/cutlist_v1.json
 ```
 
-`validate_cutlist.py` prüft: lückenlose Schnittpunkte, kein Clip liest über
-sein Quellende hinaus, zwei Verwendungen desselben Clips überlappen sich nicht,
-Summe der Dauern gleich `ende_s`. Dazu listet es ungenutzte Clips. Ein
+`validate_cutlist.py` prüft: Schnittpunkte einschließlich konfigurierter
+Überlappungen, kein Clip liest über sein Quellende hinaus, zwei Verwendungen
+desselben Clips überlappen sich nicht und das Timeline-Ende entspricht
+`ende_s`. Dazu listet es ungenutzte Clips. Ein
 Renderlauf dauert Minuten, die Prüfung Sekunden.
 
-`render.py` kodiert jedes Bildsegment einzeln mit identischen Parametern, hängt
-sie per concat-Demuxer aneinander und mischt danach Musik sowie optional die
+`render.py` kodiert jedes Bildsegment einzeln mit identischen Parametern. Ohne
+`clipwechsel_blende_s` hängt es sie wie bisher per concat-Demuxer aneinander.
+Mit positiver Blendendauer werden aufeinanderfolgende Shots derselben Datei
+zuerst verlustfrei gruppiert und nur verschiedene Quelldateien per `xfade`
+überblendet; technische Teilungen wie wechselnde `rotation` bleiben hart.
+Danach mischt es Musik sowie optional die
 unabhängige `originalton`-Timeline. `audio_timeline.py` setzt Quell- und
 Timeline-Zeiten, kurze Schnittfades, Pegel, Sidechain-Ducking und Limiter um.
 Fehlt `originalton`, bleibt der bisherige Musikfilter unverändert.

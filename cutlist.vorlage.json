@@ -13,6 +13,7 @@
   "quell_fps": 50,
   "video_ausblende_s": 3.0,
   "video_einblende_s": 0.0,
+  "clipwechsel_blende_s": 0.0,
   "review_nummer_position": "unten_rechts",
 
   "originalton": [],
@@ -40,6 +41,7 @@
     "breite/hoehe": "Hochkant 1080x1920, Querformat 1920x1080. render.py schneidet auf dieses Seitenverhaeltnis zu (crop) und skaliert dann. Weicht das Ziel vom Quellformat ab, entscheidet crop_x je Shot ueber den Ausschnitt.",
     "fps": "Framerate der Timeline. Zeitlupe ist nur sauber, wenn quell_fps genau das Doppelte ist.",
     "video_ausblende_s": "Pflichtfeld. Laenge der Ausblende am Filmende.",
+    "clipwechsel_blende_s": "Optional, Vorgabe 0 = harte Schnitte. Positive Sekundenwerte ueberblenden nur zwischen verschiedenen Quelldateien; aufeinanderfolgende Shots derselben Datei bleiben hart, etwa technische Teilungen fuer rotation.",
     "review_nummer_position": "Optional, Vorgabe unten_rechts. Ecke fuer die eingeblendete Szenennummer: unten_links, unten_rechts, oben_links oder oben_rechts. Bei Overlays dieselbe Ecke vermeiden.",
     "originalton": "Optional. Unabhaengige Sprache-/Atmo-Timeline. Leere Liste oder fehlendes Feld behaelt das alte Verhalten: stummes Bild plus Musik. Eintraege aus _originalton_beispiel hierher kopieren. Bildshot und Tonsegment muessen nicht dieselben Grenzen haben; dadurch sind B-Roll sowie J-/L-Cuts moeglich.",
     "originalton[].n": "Eindeutige Nummer des Tonsegments fuer Validator-Meldungen.",
