@@ -462,6 +462,12 @@ Bildausschnitt, also `crop` vor dem `scale` — **das ist gebaut.** `breite`/
 | `crop_y` | 0.5 | Mittelpunkt senkrecht, 0.0 = oben, 1.0 = unten |
 | `crop_zoom` | 1.0 | 1.0 = größtmöglicher Ausschnitt im Zielformat, größer = enger |
 
+**Wechselnde Telefonlage innerhalb eines Clips.** Dafür den Clip an den
+Lagewechseln in mehrere Shots teilen und nur den kopfstehenden Abschnitten
+`"rotation": 180` geben. Die Korrektur läuft vor crop/scale und verändert das
+Quellmaterial nicht. Andere Winkel sind bewusst nicht zugelassen: 90/270 Grad
+würden die Bildmaße tauschen und brauchen eine eigene Formatentscheidung.
+
 Relative Werte, keine Pixel — die Schnittliste bleibt dadurch unabhängig von
 der Quellauflösung. `render.py` rechnet die Ausschnittmaße in ffmpegs eigenen
 Variablen `iw`/`ih` aus, ohne ffprobe. Stimmen Quell- und Zielverhältnis

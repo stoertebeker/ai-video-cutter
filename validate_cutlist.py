@@ -91,6 +91,13 @@ if not musik.is_file():
 for s in cfg["shots"]:
     pfad = SRC / s["clip"]
 
+    rotation = s.get("rotation", 0)
+    if not isinstance(rotation, int) or isinstance(rotation, bool) \
+            or rotation not in (0, 180):
+        fehler.append(
+            f"Shot {s['n']}: rotation muss 0 oder 180 sein, ist {rotation!r}"
+        )
+
     # Bildausschnitt. Die Werte sind relativ, damit die Schnittliste nicht an
     # einer Quellaufloesung klebt - deshalb sind die Grenzen fest und nicht
     # vom Material abhaengig.

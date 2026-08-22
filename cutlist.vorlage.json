@@ -52,6 +52,7 @@
     "shots[].schnitt_bei": "Position auf der Timeline, Sekunden. Lueckenlos an die vorige Einstellung anschliessen.",
     "shots[].dauer": "Laenge auf der Timeline, Sekunden",
     "shots[].tempo": "Optional. 0.5 = halbe Geschwindigkeit. verbraucht = dauer * tempo.",
+    "shots[].rotation": "Optional, Vorgabe 0. Erlaubt sind 0 und 180 Grad. Dient zur abschnittsweisen Korrektur, wenn ein Telefon innerhalb derselben Aufnahme die Lage gewechselt hat. Die Quelldatei bleibt unveraendert.",
     "shots[].crop_x": "Optional, Vorgabe 0.5. Mittelpunkt des Bildausschnitts waagerecht: 0.0 = ganz links, 1.0 = ganz rechts. Wirkt nur, wenn breite/hoehe ein anderes Seitenverhaeltnis haben als die Quelle - dann wird zugeschnitten statt verzerrt. Relativ angegeben, damit die Schnittliste unabhaengig von der Quellaufloesung bleibt. Welcher Ausschnitt richtig ist, entscheidet das Bild: sheet_crop.py zeichnet ihn in den Quellframe.",
     "shots[].crop_y": "Optional, Vorgabe 0.5. Dasselbe senkrecht: 0.0 = oben, 1.0 = unten. Bei Querformatquelle in Hochkantziel und crop_zoom 1.0 ohne Wirkung, weil dort die volle Bildhoehe genutzt wird - validate_cutlist.py weist darauf hin.",
     "shots[].crop_zoom": "Optional, Vorgabe 1.0 = groesstmoeglicher Ausschnitt im Zielformat. Groesser heisst enger: 2.0 nimmt die halbe Kantenlaenge. Kostet Aufloesung, schafft aber erst den Spielraum, in dem crop_y wirkt.",

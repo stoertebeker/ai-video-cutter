@@ -75,6 +75,12 @@ for idx, s in enumerate(shots):
         )
     timeline_duration = frames / FPS
     quelle = timeline_duration * tempo    # so viel Material wird verbraucht
+    # Manche Telefone schreiben waehrend einer Aufnahme wechselnde Lage nicht
+    # verlaesslich in den Container. rotation korrigiert solche Teilstuecke
+    # shotweise, ohne die Quelldatei anzufassen. 180 Grad veraendert die
+    # Bildmasse nicht und kann deshalb direkt vor crop stehen.
+    rotation = int(s.get("rotation", 0))
+    rotation_filter = "hflip,vflip," if rotation == 180 else ""
     # Bildausschnitt vor der Skalierung. Noetig, sobald Quell- und
     # Zielseitenverhaeltnis auseinanderfallen (Querformat -> Hochkant): scale
     # allein wuerde dann verzerren, pad ergaebe ein Briefmarkenbild.
@@ -102,7 +108,7 @@ for idx, s in enumerate(shots):
             f":x='2*floor((iw-ow)*{crop_x:g}/2)'"
             f":y='2*floor((ih-oh)*{crop_y:g}/2)'")
     # setpts muss vor fps stehen, sonst wird erst dezimiert und dann gedehnt.
-    vf = (f"{crop},scale={W}:{H}:flags=lanczos,setpts=PTS/{tempo},"
+    vf = (f"{rotation_filter}{crop},scale={W}:{H}:flags=lanczos,setpts=PTS/{tempo},"
           f"fps={FPS},setsar=1")
     # -ss UND -t vor -i: beides sind hier Eingabe-Optionen. Stuende -t hinter
     # -i, wuerde es die Ausgabe begrenzen und die von setpts gedehnte
@@ -121,8 +127,9 @@ for idx, s in enumerate(shots):
     lupe = f"  [Zeitlupe {tempo:g}x, Quelle {quelle:.3f}s]" if tempo != 1.0 else ""
     schnitt = ("" if (crop_x, crop_y, zoom) == (0.5, 0.5, 1.0)
                else f"  [Ausschnitt x={crop_x:g} y={crop_y:g} zoom={zoom:g}]")
+    drehung = f"  [Drehung {rotation} Grad]" if rotation else ""
     print(f"Segment {s['n']}: {s['clip']} @ {s['in']:.2f}s, "
-          f"{timeline_duration:.3f}s / {frames} Frames{lupe}{schnitt}",
+          f"{timeline_duration:.3f}s / {frames} Frames{lupe}{schnitt}{drehung}",
           file=sys.stderr)
 
 # 2) Concat

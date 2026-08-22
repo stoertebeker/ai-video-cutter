@@ -271,6 +271,10 @@ Felder je Shot:
 | `crop_y` | 0.5 | Mittelpunkt senkrecht, 0.0 = oben, 1.0 = unten |
 | `crop_zoom` | 1.0 | 1.0 = größtmöglicher Ausschnitt, größer = enger |
 
+Wechselt ein Telefon innerhalb eines Clips zwischen normaler und kopfstehender
+Lage, kann ein Shot zusätzlich `"rotation": 180` tragen. Der Clip wird dafür in
+mehrere lückenlose Shots geteilt; die Quelldatei bleibt unverändert.
+
 Die Werte sind relativ, nicht in Pixeln — die Schnittliste bleibt dadurch
 unabhängig von der Quellauflösung. Bei gleichem Quell- und Zielverhältnis
 ändert der Zuschnitt nichts.
