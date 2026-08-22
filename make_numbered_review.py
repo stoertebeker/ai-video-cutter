@@ -7,9 +7,9 @@ Bild der Review-Kopie wird neu kodiert, die Audiospur wird kopiert.
 
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 import encoder
@@ -26,20 +26,28 @@ def ass_time(seconds: float) -> str:
     return f"{hours}:{minutes:02d}:{secs:02d}.{cs:02d}"
 
 
-if len(sys.argv) < 2:
-    raise SystemExit("Aufruf: python make_numbered_review.py <cutlist.json> [ausgabe.mp4]")
+parser = argparse.ArgumentParser(description="Erzeugt eine nummerierte Review-Kopie.")
+parser.add_argument("cutlist")
+parser.add_argument("ausgabe", nargs="?")
+parser.add_argument(
+    "--source",
+    help="Bereits betitelte/weiterverarbeitete Quelle statt cfg.ausgabe",
+)
+args = parser.parse_args()
 
-cutlist = Path(sys.argv[1])
+cutlist = Path(args.cutlist)
 if not cutlist.is_absolute():
     cutlist = ROOT / cutlist
 
 cfg = json.loads(cutlist.read_text(encoding="utf-8-sig"))
-source = ROOT / cfg["ausgabe"]
+source = Path(args.source) if args.source else ROOT / cfg["ausgabe"]
+if not source.is_absolute():
+    source = ROOT / source
 if not source.exists():
     raise SystemExit(f"Gerenderte Arbeitsfassung fehlt: {source}")
 
-if len(sys.argv) > 2:
-    output = Path(sys.argv[2])
+if args.ausgabe:
+    output = Path(args.ausgabe)
     if not output.is_absolute():
         output = ROOT / output
 else:

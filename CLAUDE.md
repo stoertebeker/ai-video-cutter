@@ -298,6 +298,10 @@ eingefügte Einstellungen ändern die Zuordnung, alte Zahlen gelten nicht
 weiter. Die unnummerierte Endfassung braucht keinen eigenen Schritt: Sie ist
 die Datei, die `render.py` ohnehin schreibt.
 
+Für eine Abnahme inklusive Titel/Abspann akzeptiert das Skript zusätzlich
+`--source out/<fassung>_titel.mp4`. So wird die bereits betitelte Fassung
+nummeriert, ohne die Schnittliste oder ihre eigentliche `ausgabe` umzubiegen.
+
 `n` muss eindeutig sein, sonst überschreiben sich Rendersegmente stillschweigend
 und die Verständigung bricht zusammen. `validate_cutlist.py` prüft das und
 weist zusätzlich darauf hin, wenn die Nummern nicht aufsteigend laufen.

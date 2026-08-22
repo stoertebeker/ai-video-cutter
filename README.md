@@ -114,6 +114,10 @@ jeder Änderung an der Schnittliste neu erzeugen, sonst stimmen die Zahlen
 nicht mehr. Die unnummerierte Endfassung entsteht am Schluss von selbst: Es
 ist die Datei, die `render.py` ohnehin schreibt.
 
+Soll die Abnahme bereits Titel und Abspann enthalten, kann mit
+`--source out/<fassung>_titel.mp4` eine weiterverarbeitete Quelle angegeben
+werden. Die optionale Ausgabedatei bleibt das zweite Positionsargument.
+
 ## Titel und Abspann
 
 ```
