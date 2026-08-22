@@ -43,6 +43,56 @@ class AudioTimelineTests(unittest.TestCase):
         self.assertIn("sidechaincompress=", graph)
         self.assertTrue(graph.endswith("[a]"))
 
+    def test_multiple_music_segments_crossfade_before_original_ducking(self):
+        config = {
+            "musik": [
+                {"n": 1, "datei": "a.wav", "in": 2.0,
+                 "schnitt_bei": 0.0, "dauer": 6.0,
+                 "fade_in_s": 0.5, "fade_out_s": 1.0},
+                {"n": 2, "datei": "b.wav", "in": 0.0,
+                 "schnitt_bei": 5.0, "dauer": 5.0,
+                 "fade_in_s": 1.0, "fade_out_s": 0.5},
+            ],
+            "originalton": [
+                {"n": 1, "clip": "clip.mp4", "in": 0.0,
+                 "schnitt_bei": 1.0, "dauer": 3.0}
+            ],
+        }
+        args = at.music_input_args(config, Path("root"))
+        graph = at.filter_graph(config, 10.0, first_original_input=3)
+        music_only = at.music_only_filter_graph(config, 10.0)
+
+        self.assertEqual(args.count("-i"), 2)
+        self.assertIn("[1:a:0]", graph)
+        self.assertIn("[2:a:0]", graph)
+        self.assertIn("adelay=5000:all=1", graph)
+        self.assertIn("amix=inputs=3", graph)
+        self.assertIn("[3:a:0]", graph)
+        self.assertIn("sidechaincompress=", graph)
+        self.assertTrue(music_only.endswith("[a]"))
+
+    def test_music_validation_allows_overlap_but_checks_sources(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "a.wav").touch()
+            config = {
+                "musik": [
+                    {"n": 4, "datei": "a.wav", "in": 8.0,
+                     "schnitt_bei": 0.0, "dauer": 3.0,
+                     "fade_in_s": 2.0, "fade_out_s": 2.0},
+                    {"n": 4, "datei": "missing.wav", "in": 0.0,
+                     "schnitt_bei": 2.0, "dauer": 3.0},
+                ]
+            }
+            errors, _ = at.validate_music(
+                config, root, 5.0, lambda _path: (10.0, True)
+            )
+            joined = "\n".join(errors)
+            self.assertIn("Datei hat nur", joined)
+            self.assertIn("Fadezeiten", joined)
+            self.assertIn("Datei fehlt", joined)
+            self.assertIn("doppelt vergeben", joined)
+
     def test_validation_checks_audio_bounds_fades_and_numbers(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp)

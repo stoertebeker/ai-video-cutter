@@ -17,6 +17,10 @@
   "originalton": [],
   "_originalton_beispiel": {"n": 1, "clip": "DATEINAME.MP4", "in": 1.2, "schnitt_bei": 4.0, "dauer": 8.5, "pegel_db": 0.0, "fade_in_s": 0.02, "fade_out_s": 0.02},
   "_audio_mix_beispiel": {"musik_pegel_db": -18.0, "originalton_pegel_db": 0.0},
+  "_musik_timeline_beispiel": [
+    {"n": 1, "datei": "audio/PROJEKT/TRACK_A.wav", "in": 0.0, "schnitt_bei": 0.0, "dauer": 120.0, "fade_in_s": 1.5, "fade_out_s": 2.0},
+    {"n": 2, "datei": "audio/PROJEKT/TRACK_B.wav", "in": 0.0, "schnitt_bei": 118.0, "dauer": 120.0, "fade_in_s": 2.0, "fade_out_s": 1.5}
+  ],
 
   "overlays": [],
   "_route_overlay_beispiel": {"n": 1, "type": "route_progress", "zeit": "2025-01-01T12:34:56+01:00", "schnitt_bei": 10.0, "dauer": 4.0, "position": "bottom_right", "fade_in_s": 0.18, "fade_out_s": 0.22},
@@ -44,6 +48,11 @@
     "originalton[].pegel_db": "Optional, Vorgabe 0 dB. Korrektur nur fuer dieses Segment, erlaubt -60 bis +12 dB.",
     "originalton[].fade_in_s/fade_out_s": "Optional, Vorgabe je 0.02 s gegen Klicks am Schnitt. Pausen innerhalb des Segments bleiben erhalten.",
     "audio_mix": "Optional bei Originalton. Werte aus _audio_mix_beispiel kopieren. Vorgaben: Musik -18 dB, Originalton 0 dB. Sprache und Atmo ducken die Musik automatisch; ein abschliessender Limiter faengt Pegelspitzen ab.",
+    "musik": "Optionaler Ersatz fuer das einzelne Feld audio: Liste aus mehreren frei platzierbaren Musiksegmenten. Ueberlappung plus Fadezeiten ergibt einen Crossfade; dieselbe Datei darf fuer lange Vlogs mehrfach verwendet werden.",
+    "musik[].n/datei": "Eindeutige Nummer und Musikdatei relativ zum Projektwurzelverzeichnis.",
+    "musik[].in/schnitt_bei/dauer": "Quellstart, Start auf der Filmtimeline und Segmentlaenge in Sekunden.",
+    "musik[].fade_in_s/fade_out_s": "Optionale weiche Blenden, Vorgabe je 1.5 s. Ueberlappende Segmente werden additiv gemischt.",
+    "musik[].pegel_db": "Optionale Pegelkorrektur nur fuer dieses Musiksegment, -60 bis +12 dB.",
     "gpx": "Optional bei route_progress-Overlays. GPX-Datei relativ zum Projektwurzelverzeichnis; Trackpunkte muessen Zeitstempel besitzen.",
     "overlays": "Optionale, unabhaengige Einblendungs-Timeline. route_progress erzeugt eine lokale GPX-Minikarte mit Zeit seit Start und Streckenkilometer; image blendet ein vorhandenes Bild ein. Beide Wege veraendern die Quelldateien nicht.",
     "overlays[].n": "Eindeutige Overlay-Nummer.",

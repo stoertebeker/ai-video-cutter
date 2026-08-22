@@ -259,6 +259,10 @@ Fehlt `originalton`, bleibt der bisherige Musikfilter unverändert.
 `route_progress` zeichnet aus GPX plus Aufnahmezeit eine lokale Minikarte mit
 Zeit seit Start und Kilometerstand; `image` ist der generische Weg für Fotos
 in späteren Vlogs. Assets landen unter `sheets/<projekt>/overlays_<fassung>/`.
+Das einzelne Feld `audio` bleibt der Legacy-Weg. Lange Vlogs können es durch
+eine `musik`-Timeline ersetzen: mehrere Tracksegmente werden per Quell- und
+Timeline-Zeit platziert, Überlappungen mit Fades ergeben Crossfades. Die
+Originalton-Timeline duckt anschließend den bereits zusammengesetzten Mix.
 Einzelsegmente statt eines großen filter_complex, weil Fehler dann lokal
 bleiben und sich einzelne Segmente austauschen lassen.
 

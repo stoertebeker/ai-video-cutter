@@ -259,6 +259,12 @@ per Sidechain-Kompressor; Pausen innerhalb eines gewählten Tonsegments bleiben
 erhalten. Fehlt `originalton` oder ist die Liste leer, läuft exakt der bisherige
 Weg mit stummem Bild plus Musik.
 
+Für lange Vlogs kann `musik` das einzelne Feld `audio` ersetzen. Die Liste
+platziert mehrere Tracksegmente mit eigenem Quellstart, Timeline-Start, Dauer
+und Pegel. Überlappende Segmente mit `fade_in_s`/`fade_out_s` ergeben einen
+weichen Crossfade; derselbe Track darf später erneut eingesetzt werden. Alte
+Schnittlisten mit nur `audio` laufen unverändert weiter.
+
 ### GPX-Minikarte und Bilder
 
 Die optionale `overlays`-Timeline liegt ebenfalls in der Schnittliste. Ein

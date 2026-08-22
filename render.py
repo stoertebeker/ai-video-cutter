@@ -143,21 +143,37 @@ run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
      "-i", str(listfile), "-c", "copy", str(stumm)])
 
 # 3) Musik und optional unabhaengigen Originalton mischen, hart auf ende_s
-audio = ROOT / cfg["audio"]
 video_fades = []
 if fade_in > 0:
     video_fades.append(f"fade=t=in:st=0:d={fade_in:.3f}")
 video_fades.append(f"fade=t=out:st={ende - fade:.3f}:d={fade:.3f}")
 video_filter = ",".join(video_fades)
+music_segments = audio_timeline.music_entries(cfg)
+if music_segments:
+    music_inputs = audio_timeline.music_input_args(cfg, ROOT)
+    music_input_count = len(music_segments)
+    print(f"Musik: {music_input_count} Timeline-Segment(e)", file=sys.stderr)
+else:
+    # Der einzelne Legacy-Track bleibt Eingang 1 und behaelt seinen bisherigen
+    # Filterpfad. So aendern neue Vlog-Funktionen alte Projekte nicht.
+    music_inputs = ["-i", str(ROOT / cfg["audio"])]
+    music_input_count = 1
+
 originalton = audio_timeline.entries(cfg)
+first_original_input = 1 + music_input_count
 if originalton:
-    audio_filter = audio_timeline.filter_graph(cfg, ende)
-    audio_inputs = audio_timeline.input_args(cfg, SRC)
+    audio_filter = audio_timeline.filter_graph(
+        cfg, ende, music_input=1, first_original_input=first_original_input
+    )
+    original_inputs = audio_timeline.input_args(cfg, SRC)
     print(
         f"Originalton: {len(originalton)} Segment(e), "
         f"Musik {float(cfg.get('audio_mix', {}).get('musik_pegel_db', -18.0)):g} dB",
         file=sys.stderr,
     )
+elif music_segments:
+    audio_filter = audio_timeline.music_only_filter_graph(cfg, ende)
+    original_inputs = []
 else:
     # Exakt der bisherige Filter: Alte Schnittlisten bleiben bitlogisch bei
     # stummem Bild plus Musik, statt unbemerkt neue Pegelwerte zu erhalten.
@@ -165,9 +181,9 @@ else:
         f"[1:a]atrim=0:{ende:.3f},"
         f"afade=t=out:st={ende - 0.4:.3f}:d=0.4[a]"
     )
-    audio_inputs = []
+    original_inputs = []
 
-overlay_first_input = 2 + len(originalton)
+overlay_first_input = 1 + music_input_count + len(originalton)
 overlay_args, overlay_filter = overlay_timeline.prepare(
     cfg,
     ROOT,
@@ -184,8 +200,9 @@ else:
 
 run([
     "ffmpeg", "-y", "-loglevel", "error",
-    "-i", str(stumm), "-i", str(audio),
-    *audio_inputs,
+    "-i", str(stumm),
+    *music_inputs,
+    *original_inputs,
     *overlay_args,
     "-filter_complex", f"{video_graph};{audio_filter}",
     "-map", "[v]", "-map", "[a]",

@@ -47,12 +47,14 @@ def probe(p: Path) -> tuple[float, int, int, bool]:
         capture_output=True, text=True, check=True,
     )
     j = json.loads(r.stdout)
-    video = next(st for st in j["streams"] if st.get("codec_type") == "video")
+    video = next(
+        (st for st in j["streams"] if st.get("codec_type") == "video"), None
+    )
     has_audio = any(st.get("codec_type") == "audio" for st in j["streams"])
     return (
         float(j["format"]["duration"]),
-        int(video["width"]),
-        int(video["height"]),
+        int(video["width"]) if video else 0,
+        int(video["height"]) if video else 0,
         has_audio,
     )
 
@@ -85,9 +87,13 @@ if nummern != sorted(nummern):
 
 if not SRC.is_dir():
     fehler.append(f"Quellordner fehlt: {SRC}")
-musik = ROOT / cfg["audio"]
-if not musik.is_file():
-    fehler.append(f"Musikdatei fehlt: {musik}")
+if "musik" not in cfg:
+    if "audio" not in cfg:
+        fehler.append("Musik fehlt: weder Feld audio noch musik vorhanden")
+    else:
+        musik = ROOT / cfg["audio"]
+        if not musik.is_file():
+            fehler.append(f"Musikdatei fehlt: {musik}")
 
 for s in cfg["shots"]:
     pfad = SRC / s["clip"]
@@ -193,6 +199,12 @@ audio_fehler, audio_hinweise = audio_timeline.validate(
 )
 fehler.extend(audio_fehler)
 hinweise.extend(audio_hinweise)
+
+musik_fehler, musik_hinweise = audio_timeline.validate_music(
+    cfg, ROOT, float(cfg["ende_s"]), probe_audio
+)
+fehler.extend(musik_fehler)
+hinweise.extend(musik_hinweise)
 
 overlay_fehler, overlay_hinweise = overlay_timeline.validate(
     cfg, ROOT, float(cfg["ende_s"])
