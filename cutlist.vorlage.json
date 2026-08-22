@@ -69,6 +69,7 @@
     "titel[].dauer": "Standzeit in Sekunden, Ein- und Ausblende eingerechnet.",
     "titel[].einblende_ms": "Optional, Millisekunden. Ueberschreibt die Blendendauer aus dem Kopf von make_titles.py. Anders als Schrift und Groesse haengt sie nicht am Haus-Stil, sondern an der Filmlaenge - eine Sekunde ist bei sieben Minuten unauffaellig und bei einem 23-Sekunden-Trailer ein Viertel des Abspanns.",
     "titel[].ausblende_ms": "Optional, Millisekunden. Wie einblende_ms. Ein- und Ausblende zusammen duerfen die Standzeit nicht ueberschreiten, sonst stuende der Titel nie voll im Bild - make_titles.py bricht dann ab.",
+    "titel[].stil": "Optional: titel (Vorgabe, zentriert) oder credit (klein unten rechts), z.B. fuer einen Urheberhinweis im schwarzen Nachlauf.",
     "nachlauf_schwarz_s": "Optional, 0 = aus. Haengt Schwarzbild hinter ende_s an, damit ein Abspann noch stehen kann, nachdem das Bild ausgeblendet ist; der Ton laeuft dort stumm weiter. Ein Abspann, der die Szene noch begleiten und erst danach allein stehen soll, beginnt entsprechend vor ende_s: 'bei' frueher setzen, 'dauer' ueber ende_s hinausreichen lassen.",
     "shots[].n": "Szenennummer. Muss eindeutig sein - render.py benennt die Segmente danach, und in Feedbackrunden ist sie die gemeinsame Sprache ('aendere Szene 3'). make_numbered_review.py blendet genau diese Zahl ins Bild. Aufsteigend ist wuenschenswert, aber nicht Pflicht.",
     "shots[].in": "Einstiegszeitpunkt im Quellclip, Sekunden",

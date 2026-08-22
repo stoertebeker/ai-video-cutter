@@ -126,6 +126,9 @@ Skript — Feld `titel` mit `text`, optionaler `unterzeile`, `bei` und `dauer`.
 Schrift, Größen und Blenden stehen am Kopf von `make_titles.py` und gelten für
 alle Projekte.
 
+Für einen kleinen Urheberhinweis unten rechts trägt der Titeleintrag
+`"stil": "credit"`. Der normale zentrierte Titel bleibt die Vorgabe.
+
 `nachlauf_schwarz_s` hängt Schwarzbild hinter `ende_s` an. Damit kann ein
 Abspann die Schlussszene noch begleiten und erst danach allein im Schwarzen
 stehen: `bei` vor `ende_s` legen, `dauer` darüber hinausreichen lassen.

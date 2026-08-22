@@ -57,6 +57,7 @@ AUSBLENDE_MS = 900
 # faellt sie nicht auf, deshalb ein Wert fuer beide Faelle.
 KONTUR = 2
 SCHATTEN = 2
+GROESSE_CREDIT = 34
 
 
 def ass_time(seconds: float) -> str:
@@ -116,6 +117,10 @@ for eintrag in titel:
             f"{bei + dauer:.2f}s, der Film ist aber nur {gesamt:.2f}s lang "
             f"(ende_s {ende:.2f} + nachlauf_schwarz_s {nachlauf:.2f})."
         )
+    if eintrag.get("stil", "titel") not in ("titel", "credit"):
+        raise SystemExit(
+            f"Titel \"{eintrag['text']}\": stil muss 'titel' oder 'credit' sein."
+        )
     # Blenden, die zusammen laenger sind als die Standzeit, hiessen: der
     # Titel steht nie voll da. Das faellt im Ergebnis kaum auf und ist
     # trotzdem falsch, deshalb hier abfangen.
@@ -146,6 +151,7 @@ WrapStyle: 0
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Titel,{SCHRIFT},{GROESSE_TITEL},&H00FFFFFF,&H00FFFFFF,&HC0000000,&HA0000000,0,0,0,0,100,100,{SPERRUNG_TITEL},0,1,{KONTUR},{SCHATTEN},5,80,80,0,1
 Style: Unterzeile,{SCHRIFT},{GROESSE_UNTERZEILE},&H00EAEAEA,&H00EAEAEA,&HC0000000,&HA0000000,0,0,0,0,100,100,{SPERRUNG_UNTERZEILE},0,1,{KONTUR},{SCHATTEN},5,80,80,0,1
+Style: Credit,{SCHRIFT},{GROESSE_CREDIT},&H00D8D8D8,&H00D8D8D8,&HC0000000,&HA0000000,0,0,0,0,100,100,2,0,1,1,1,3,50,50,36,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -160,8 +166,14 @@ for eintrag in titel:
     ein_ms = int(eintrag.get("einblende_ms", EINBLENDE_MS))
     aus_ms = int(eintrag.get("ausblende_ms", AUSBLENDE_MS))
     fad = f"\\fad({ein_ms},{aus_ms})"
+    stil = eintrag.get("stil", "titel")
 
-    if unterzeile:
+    if stil == "credit":
+        events.append(
+            f"Dialogue: 0,{ass_time(bei)},{ass_time(ende_titel)},Credit,,0,0,0,,"
+            f"{{{fad}}}{ass_escape(eintrag['text'])}"
+        )
+    elif unterzeile:
         # Zweizeilig: Titel nach oben, Unterzeile nach unten ruecken, damit
         # der Block optisch um die Bildmitte sitzt.
         y_titel = mitte - GROESSE_UNTERZEILE * 0.80

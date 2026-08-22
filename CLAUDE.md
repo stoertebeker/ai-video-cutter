@@ -322,6 +322,10 @@ wieder Handarbeit, und genau das soll die Kette verhindern. Alles
 Gestalterische — Schrift, Größen, Sperrung — steht dagegen am Kopf von
 `make_titles.py` und gilt projektübergreifend.
 
+Ein Eintrag mit `"stil": "credit"` wird klein unten rechts gesetzt. Das ist
+für einen Urheberhinweis im schwarzen Nachlauf gedacht; ohne das Feld bleibt
+der Titel wie bisher zentriert.
+
 **Die Blendendauer ist die Ausnahme davon.** Sie steht dort als Standard
 (`EINBLENDE_MS`, `AUSBLENDE_MS`), lässt sich aber je Titel über
 `einblende_ms`/`ausblende_ms` überschreiben — anders als eine Schriftwahl
