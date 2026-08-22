@@ -8,6 +8,7 @@ from pathlib import Path
 
 import encoder
 import audio_timeline
+import overlay_timeline
 
 ROOT = Path(__file__).parent
 # Schnittliste als Pflichtargument - so koennen mehrere Fassungen eines
@@ -166,11 +167,27 @@ else:
     )
     audio_inputs = []
 
+overlay_first_input = 2 + len(originalton)
+overlay_args, overlay_filter = overlay_timeline.prepare(
+    cfg,
+    ROOT,
+    ROOT / "sheets" / CUTLIST.parent.name / f"overlays_{CUTLIST.stem}",
+    overlay_first_input,
+    W,
+    H,
+)
+if overlay_filter:
+    video_graph = f"[0:v]{video_filter}[video_basis];{overlay_filter}"
+    print(f"Overlays: {len(overlay_timeline.entries(cfg))}", file=sys.stderr)
+else:
+    video_graph = f"[0:v]{video_filter}[v]"
+
 run([
     "ffmpeg", "-y", "-loglevel", "error",
     "-i", str(stumm), "-i", str(audio),
     *audio_inputs,
-    "-filter_complex", f"[0:v]{video_filter}[v];{audio_filter}",
+    *overlay_args,
+    "-filter_complex", f"{video_graph};{audio_filter}",
     "-map", "[v]", "-map", "[a]",
     *encoder.video_args(), "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-b:a", "192k",

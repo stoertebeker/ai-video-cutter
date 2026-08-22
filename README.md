@@ -180,6 +180,7 @@ Projekt nichts zu ändern.**
 | `make_contactsheets.py` | Kontaktbögen aus den Quellclips |
 | `transcribe_clips.py` | clipweise WhisperX-Transkripte mit Wortzeitmarken |
 | `audio_timeline.py` | unabhängige Originalton-/Atmo-Spur und Musik-Ducking |
+| `overlay_timeline.py` | zeitgesteuerte GPX-Minikarten und künftige Bildeinblendungen |
 | `validate_cutlist.py` | prüft die Schnittliste vor dem Rendern |
 | `sheet_crop.py` | zeigt die gewählten Bildausschnitte im Quellbild |
 | `render.py` | Segmente kodieren, aneinanderhängen, Musik und Originalton mischen |
@@ -257,6 +258,19 @@ Grundlautstärken. Sobald Sprache oder Atmo anliegt, duckt `render.py` die Musik
 per Sidechain-Kompressor; Pausen innerhalb eines gewählten Tonsegments bleiben
 erhalten. Fehlt `originalton` oder ist die Liste leer, läuft exakt der bisherige
 Weg mit stummem Bild plus Musik.
+
+### GPX-Minikarte und Bilder
+
+Die optionale `overlays`-Timeline liegt ebenfalls in der Schnittliste. Ein
+Eintrag vom Typ `route_progress` interpoliert seine Aufnahmezeit gegen die
+GPX-Datei und zeigt für rund vier Sekunden Route, aktuellen Punkt, Zeit seit
+Start und Streckenkilometer. Die Karte wird vollständig lokal gezeichnet; es
+werden keine Kartendienste oder API-Schlüssel benötigt. Schnelle Alpha-Blenden
+sind je Eintrag einstellbar.
+
+Der Typ `image` nutzt dieselbe Timeline für Fotos oder Grafiken. Aktuelle
+Projekte müssen ihn nicht verwenden, spätere Vlogs benötigen dadurch aber
+keinen zweiten Sonderweg. Quelldateien werden in beiden Fällen nicht verändert.
 
 ### Hochkant aus Querformat
 

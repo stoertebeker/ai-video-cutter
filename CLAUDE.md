@@ -255,6 +255,10 @@ sie per concat-Demuxer aneinander und mischt danach Musik sowie optional die
 unabhängige `originalton`-Timeline. `audio_timeline.py` setzt Quell- und
 Timeline-Zeiten, kurze Schnittfades, Pegel, Sidechain-Ducking und Limiter um.
 Fehlt `originalton`, bleibt der bisherige Musikfilter unverändert.
+`overlay_timeline.py` baut optionale Einblendungen im selben finalen Pass:
+`route_progress` zeichnet aus GPX plus Aufnahmezeit eine lokale Minikarte mit
+Zeit seit Start und Kilometerstand; `image` ist der generische Weg für Fotos
+in späteren Vlogs. Assets landen unter `sheets/<projekt>/overlays_<fassung>/`.
 Einzelsegmente statt eines großen filter_complex, weil Fehler dann lokal
 bleiben und sich einzelne Segmente austauschen lassen.
 

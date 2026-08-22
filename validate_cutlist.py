@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 import audio_timeline
+import overlay_timeline
 
 ROOT = Path(__file__).parent
 if len(sys.argv) < 2:
@@ -192,6 +193,12 @@ audio_fehler, audio_hinweise = audio_timeline.validate(
 )
 fehler.extend(audio_fehler)
 hinweise.extend(audio_hinweise)
+
+overlay_fehler, overlay_hinweise = overlay_timeline.validate(
+    cfg, ROOT, float(cfg["ende_s"])
+)
+fehler.extend(overlay_fehler)
+hinweise.extend(overlay_hinweise)
 
 if abs(pos - float(cfg["ende_s"])) > 0.001:
     fehler.append(f"Summe der Dauern {pos:.3f}s != ende_s {cfg['ende_s']}")

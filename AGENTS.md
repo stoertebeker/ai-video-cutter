@@ -163,6 +163,8 @@ bestehende Projekte ändern sich nicht.
 
 - Originalton im Resolve-Export — die lokale MP4-Pipeline rendert eine
   unabhängige `originalton`-Timeline samt Musik-Ducking, Resolve noch nicht
+- GPX- und Bild-Overlays im Resolve-Export — die lokale MP4-Pipeline rendert
+  die `overlays`-Timeline, Resolve überträgt sie noch nicht
 - Rahmen statt beschneiden (Letterbox) — abweichende Formate werden
   zugeschnitten; ebenso wenig gibt es einen animierten Schwenk (Ken Burns),
   und der Resolve-Export kennt die crop-Felder nicht
