@@ -85,6 +85,15 @@ if nummern != sorted(nummern):
     hinweise.append("Szenennummern laufen nicht aufsteigend - erlaubt, aber "
                     "erschwert die Verstaendigung ueber die Reviewfassung")
 
+review_position = cfg.get("review_nummer_position", "unten_rechts")
+if review_position not in {
+    "unten_links", "unten_rechts", "oben_links", "oben_rechts"
+}:
+    fehler.append(
+        "review_nummer_position muss unten_links, unten_rechts, oben_links "
+        f"oder oben_rechts sein, ist {review_position!r}"
+    )
+
 if not SRC.is_dir():
     fehler.append(f"Quellordner fehlt: {SRC}")
 if "musik" not in cfg:

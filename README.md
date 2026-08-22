@@ -117,6 +117,9 @@ ist die Datei, die `render.py` ohnehin schreibt.
 Soll die Abnahme bereits Titel und Abspann enthalten, kann mit
 `--source out/<fassung>_titel.mp4` eine weiterverarbeitete Quelle angegeben
 werden. Die optionale Ausgabedatei bleibt das zweite Positionsargument.
+Die Ecke der Nummer steuert optional `review_nummer_position` in der
+Schnittliste (`unten_rechts` ist Vorgabe; bei einer dortigen Minikarte bietet
+sich `oben_rechts` an).
 
 ## Titel und Abspann
 

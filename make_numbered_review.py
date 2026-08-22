@@ -40,6 +40,19 @@ if not cutlist.is_absolute():
     cutlist = ROOT / cutlist
 
 cfg = json.loads(cutlist.read_text(encoding="utf-8-sig"))
+positionen = {
+    "unten_links": 1,
+    "unten_rechts": 3,
+    "oben_links": 7,
+    "oben_rechts": 9,
+}
+position = cfg.get("review_nummer_position", "unten_rechts")
+if position not in positionen:
+    erlaubt = ", ".join(positionen)
+    raise SystemExit(
+        f"review_nummer_position muss eine von {erlaubt} sein, ist {position!r}"
+    )
+alignment = positionen[position]
 source = Path(args.source) if args.source else ROOT / cfg["ausgabe"]
 if not source.is_absolute():
     source = ROOT / source
@@ -68,7 +81,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: SceneNumber,Arial,96,&H0000FFFF,&H0000FFFF,&H90000000,&H90000000,-1,0,0,0,100,100,0,0,3,6,0,3,40,60,50,1
+Style: SceneNumber,Arial,96,&H0000FFFF,&H0000FFFF,&H90000000,&H90000000,-1,0,0,0,100,100,0,0,3,6,0,{alignment},60,60,50,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

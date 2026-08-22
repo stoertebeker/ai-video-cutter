@@ -301,6 +301,9 @@ die Datei, die `render.py` ohnehin schreibt.
 Für eine Abnahme inklusive Titel/Abspann akzeptiert das Skript zusätzlich
 `--source out/<fassung>_titel.mp4`. So wird die bereits betitelte Fassung
 nummeriert, ohne die Schnittliste oder ihre eigentliche `ausgabe` umzubiegen.
+`review_nummer_position` kann die Nummer in `unten_links`, `unten_rechts`,
+`oben_links` oder `oben_rechts` setzen; Vorgabe ist unten rechts. Bei einem
+Overlay in derselben Ecke muss die Reviewnummer in eine freie Ecke wandern.
 
 `n` muss eindeutig sein, sonst überschreiben sich Rendersegmente stillschweigend
 und die Verständigung bricht zusammen. `validate_cutlist.py` prüft das und
