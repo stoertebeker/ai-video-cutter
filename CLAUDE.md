@@ -72,8 +72,13 @@ Am Code ist für ein neues Projekt nichts zu ändern.
 | Pillow 12.3 | Kontaktbögen bauen |
 | yt-dlp | Scratch-Track ziehen |
 | Kinocut 1.13.1 | Metadaten, QC (optional) |
+| WhisperX 3.8.6 (separate Python-3.10-Venv) | Wortgenaue Vlog-Transkripte |
 
 Immer über die Venv aufrufen: `.venv\Scripts\python.exe <skript>.py`
+
+Ausnahme ist `transcribe_clips.py`: WhisperX unterstützt die Python-Version
+der normalen Venv nicht. Einrichtung und Aufruf der getrennten
+`.venv-whisperx` stehen in `WHISPERX.md`.
 
 ### Encoder: GPU oder CPU
 
@@ -485,11 +490,13 @@ Ausschnitt steht je Shot fest.
 Timeline-fps sind (50→25, 60→30). Sonst interpoliert oder doppelt ffmpeg
 Frames. Vorher mit `ffprobe` prüfen.
 
-**Originalton.** `render.py` verwirft den Ton der Clips (`-an`) und legt nur
-die Musik darunter. Für Material, bei dem gesprochen wird — Reaktionen,
-Kommentare, Atmo — ist das falsch. Dann braucht `render.py` eine zweite
+**Originalton.** `transcribe_clips.py` erzeugt bereits clip-lokale WhisperX-
+JSONs mit Wortzeitmarken; Einrichtung und Pilotablauf stehen in `WHISPERX.md`.
+`render.py` verwirft den Ton der Clips aber weiterhin (`-an`) und legt nur die
+Musik darunter. Für Material, bei dem gesprochen wird — Reaktionen,
+Kommentare, Atmo — ist das falsch. Dann braucht `render.py` eine unabhängige
 Tonspur: Clipton behalten, per `amix` unter die Musik legen, Musik mit
-`sidechaincompress` ducken. Das ist **nicht gebaut**.
+`sidechaincompress` ducken. Das ist **noch nicht gebaut**.
 
 **Dramaturgie.** Trägt die Musik alles, gilt der Ablauf oben. Bei einer
 Veranstaltung trägt oft der Inhalt: Chronologie, Reaktionen, Pointen. Das

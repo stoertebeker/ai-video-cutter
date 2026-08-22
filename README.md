@@ -41,6 +41,10 @@ Die Skripte werden **immer über die Venv** aufgerufen:
 dieselben Pakete mitbringt. Kinocut selbst ist optional — kein Skript hier
 importiert es.
 
+Für sprachbasierten Vlog-Schnitt gibt es zusätzlich `transcribe_clips.py`.
+WhisperX benötigt eine getrennte Python-3.10-Umgebung; Installation, Pilotlauf
+und JSON-Format stehen in `WHISPERX.md`.
+
 ## Schnellstart
 
 Ausgangslage: ein Ordner Clips und ein Musikstück.
@@ -174,6 +178,7 @@ Projekt nichts zu ändern.**
 | `analyze_music.py` | Tempo, Beats, Onsets, RMS-Verlauf als JSON |
 | `plan_raster.py` | Taktraster aus den erkannten Beats, mit Pegel |
 | `make_contactsheets.py` | Kontaktbögen aus den Quellclips |
+| `transcribe_clips.py` | clipweise WhisperX-Transkripte mit Wortzeitmarken |
 | `validate_cutlist.py` | prüft die Schnittliste vor dem Rendern |
 | `sheet_crop.py` | zeigt die gewählten Bildausschnitte im Quellbild |
 | `render.py` | Segmente kodieren, aneinanderhängen, Musik drunter |
@@ -278,9 +283,10 @@ unbrauchbaren Stellen bei jeder Iteration neu.
 
 - **Export nur nach DaVinci Resolve**, siehe unten. Für andere Programme gibt
   es keinen Weg; FCPXML wurde versucht und verworfen.
-- **Originalton wird verworfen.** `render.py` kodiert die Segmente mit `-an` und
-  legt nur die Musik darunter. Für Material, bei dem gesprochen wird, ist das
-  falsch — eine zweite Tonspur mit `amix` und Ducking ist nicht gebaut.
+- **Originalton wird noch nicht gerendert.** `transcribe_clips.py` kann Sprache
+  bereits analysieren, aber `render.py` kodiert die Segmente weiterhin mit
+  `-an` und legt nur die Musik darunter. Eine unabhängige Tonspur mit `amix`
+  und Ducking ist der nächste, noch nicht gebaute Schritt.
 - **Abweichende Seitenverhältnisse werden beschnitten, nicht gerahmt.** Ein
   Letterbox-Rahmen ist nicht gebaut, ebenso wenig ein animierter Schwenk
   innerhalb einer Einstellung (Ken Burns) — der Ausschnitt steht je Shot fest.

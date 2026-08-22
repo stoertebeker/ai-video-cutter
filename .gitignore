@@ -16,6 +16,9 @@
 !/*.py
 !/*.md
 !/cutlist.vorlage.json
+!/tests/
+/tests/*
+!/tests/*.py
 
 # Zurueckgenommen: projektbezogene Dateien, die faelschlich im
 # Wurzelverzeichnis landen koennten. Die beiden Ausnahmen oben gelten fuer
