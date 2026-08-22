@@ -1,4 +1,4 @@
-"""Rendert den Teaser aus cutlist.json: Segmente schneiden, concat, Musik drunter."""
+"""Rendert Bildsegmente und mischt Musik mit optionalem Originalton."""
 
 import json
 import shutil
@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import encoder
+import audio_timeline
 
 ROOT = Path(__file__).parent
 # Schnittliste als Pflichtargument - so koennen mehrere Fassungen eines
@@ -133,19 +134,36 @@ stumm = SEG / "stumm.mp4"
 run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0",
      "-i", str(listfile), "-c", "copy", str(stumm)])
 
-# 3) Musik drunter, Video- und Audio-Ausblende, hart auf ende_s
+# 3) Musik und optional unabhaengigen Originalton mischen, hart auf ende_s
 audio = ROOT / cfg["audio"]
 video_fades = []
 if fade_in > 0:
     video_fades.append(f"fade=t=in:st=0:d={fade_in:.3f}")
 video_fades.append(f"fade=t=out:st={ende - fade:.3f}:d={fade:.3f}")
 video_filter = ",".join(video_fades)
+originalton = audio_timeline.entries(cfg)
+if originalton:
+    audio_filter = audio_timeline.filter_graph(cfg, ende)
+    audio_inputs = audio_timeline.input_args(cfg, SRC)
+    print(
+        f"Originalton: {len(originalton)} Segment(e), "
+        f"Musik {float(cfg.get('audio_mix', {}).get('musik_pegel_db', -18.0)):g} dB",
+        file=sys.stderr,
+    )
+else:
+    # Exakt der bisherige Filter: Alte Schnittlisten bleiben bitlogisch bei
+    # stummem Bild plus Musik, statt unbemerkt neue Pegelwerte zu erhalten.
+    audio_filter = (
+        f"[1:a]atrim=0:{ende:.3f},"
+        f"afade=t=out:st={ende - 0.4:.3f}:d=0.4[a]"
+    )
+    audio_inputs = []
+
 run([
     "ffmpeg", "-y", "-loglevel", "error",
     "-i", str(stumm), "-i", str(audio),
-    "-filter_complex",
-    f"[0:v]{video_filter}[v];"
-    f"[1:a]atrim=0:{ende:.3f},afade=t=out:st={ende - 0.4:.3f}:d=0.4[a]",
+    *audio_inputs,
+    "-filter_complex", f"[0:v]{video_filter}[v];{audio_filter}",
     "-map", "[v]", "-map", "[a]",
     *encoder.video_args(), "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-b:a", "192k",

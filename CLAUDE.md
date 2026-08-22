@@ -250,8 +250,11 @@ sein Quellende hinaus, zwei Verwendungen desselben Clips überlappen sich nicht,
 Summe der Dauern gleich `ende_s`. Dazu listet es ungenutzte Clips. Ein
 Renderlauf dauert Minuten, die Prüfung Sekunden.
 
-`render.py` kodiert jedes Segment einzeln mit identischen Parametern, hängt sie
-per concat-Demuxer aneinander und legt die Musik mit Ausblende darunter.
+`render.py` kodiert jedes Bildsegment einzeln mit identischen Parametern, hängt
+sie per concat-Demuxer aneinander und mischt danach Musik sowie optional die
+unabhängige `originalton`-Timeline. `audio_timeline.py` setzt Quell- und
+Timeline-Zeiten, kurze Schnittfades, Pegel, Sidechain-Ducking und Limiter um.
+Fehlt `originalton`, bleibt der bisherige Musikfilter unverändert.
 Einzelsegmente statt eines großen filter_complex, weil Fehler dann lokal
 bleiben und sich einzelne Segmente austauschen lassen.
 
@@ -490,13 +493,18 @@ Ausschnitt steht je Shot fest.
 Timeline-fps sind (50→25, 60→30). Sonst interpoliert oder doppelt ffmpeg
 Frames. Vorher mit `ffprobe` prüfen.
 
-**Originalton.** `transcribe_clips.py` erzeugt bereits clip-lokale WhisperX-
-JSONs mit Wortzeitmarken; Einrichtung und Pilotablauf stehen in `WHISPERX.md`.
-`render.py` verwirft den Ton der Clips aber weiterhin (`-an`) und legt nur die
-Musik darunter. Für Material, bei dem gesprochen wird — Reaktionen,
-Kommentare, Atmo — ist das falsch. Dann braucht `render.py` eine unabhängige
-Tonspur: Clipton behalten, per `amix` unter die Musik legen, Musik mit
-`sidechaincompress` ducken. Das ist **noch nicht gebaut**.
+**Originalton.** `transcribe_clips.py` erzeugt clip-lokale WhisperX-JSONs mit
+Wortzeitmarken; Einrichtung und Pilotablauf stehen in `WHISPERX.md`. Die daraus
+gewählten Passagen stehen unabhängig von den Bildshots in `originalton`:
+`clip`, Quell-`in`, Timeline-`schnitt_bei`, `dauer`, optional Segmentpegel und
+kurze Fades. Damit bleiben Sprache und Atmo unter B-Roll erhalten. `render.py`
+mischt die Segmente, duckt die Musik dynamisch und fängt Spitzen per Limiter ab.
+Pausen innerhalb eines Segments werden weder erkannt noch entfernt.
+
+Die Grundpegel stehen optional in `audio_mix`: Musik standardmäßig -18 dB,
+Originalton 0 dB. Fehlendes oder leeres `originalton` aktiviert aus
+Rückwärtskompatibilität exakt den alten Musikweg. `validate_cutlist.py` prüft
+Quelldauer, Audiospur, Timeline-Grenzen, Fades, Pegel und eindeutige Nummern.
 
 **Dramaturgie.** Trägt die Musik alles, gilt der Ablauf oben. Bei einer
 Veranstaltung trägt oft der Inhalt: Chronologie, Reaktionen, Pointen. Das
@@ -519,7 +527,8 @@ ist — das erledigt sich beim Schnitt nicht von selbst.
 
 ## Noch nicht gebaut
 
-- **Originalton**, siehe oben. Gilt auch für den Resolve-Export.
+- **Originalton im Resolve-Export.** Die lokale MP4-Pipeline kann ihn samt
+  Ducking rendern; `resolve_build.py` überträgt weiterhin nur Bild und Musik.
 - **Rahmen statt beschneiden** (Letterbox/Pillarbox). Abweichende Formate
   werden zugeschnitten, siehe oben. Ebenso wenig gebaut ist ein animierter
   Schwenk innerhalb einer Einstellung (Ken Burns) — der Ausschnitt steht je

@@ -179,9 +179,10 @@ Projekt nichts zu ändern.**
 | `plan_raster.py` | Taktraster aus den erkannten Beats, mit Pegel |
 | `make_contactsheets.py` | Kontaktbögen aus den Quellclips |
 | `transcribe_clips.py` | clipweise WhisperX-Transkripte mit Wortzeitmarken |
+| `audio_timeline.py` | unabhängige Originalton-/Atmo-Spur und Musik-Ducking |
 | `validate_cutlist.py` | prüft die Schnittliste vor dem Rendern |
 | `sheet_crop.py` | zeigt die gewählten Bildausschnitte im Quellbild |
-| `render.py` | Segmente kodieren, aneinanderhängen, Musik drunter |
+| `render.py` | Segmente kodieren, aneinanderhängen, Musik und Originalton mischen |
 | `encoder.py` | Videoparameter an einer Stelle — GPU oder CPU |
 | `sheet_sequence.py` | ein Frame je Einstellung aus dem fertigen Video |
 | `verify_cuts.py` | Frames vor und nach jedem Schnitt |
@@ -242,6 +243,21 @@ Zeitlupe, nichts interpoliert.
 
 Alle Felder mit Erklärung stehen in `cutlist.vorlage.json`.
 
+### Originalton und Musik-Ducking
+
+Für Vlogs kann die Schnittliste optional eine eigene `originalton`-Timeline
+enthalten. Jeder Eintrag nennt `clip`, Quell-`in`, Timeline-`schnitt_bei` und
+`dauer`; kurze `fade_in_s`/`fade_out_s` verhindern Klicks, `pegel_db` korrigiert
+einzelne Aufnahmen. Bild und Ton haben bewusst getrennte Grenzen: Sprache kann
+unter B-Roll weiterlaufen, und J-/L-Cuts sind ohne Manipulation am fertigen MP4
+möglich.
+
+`audio_mix.musik_pegel_db` und `audio_mix.originalton_pegel_db` regeln die
+Grundlautstärken. Sobald Sprache oder Atmo anliegt, duckt `render.py` die Musik
+per Sidechain-Kompressor; Pausen innerhalb eines gewählten Tonsegments bleiben
+erhalten. Fehlt `originalton` oder ist die Liste leer, läuft exakt der bisherige
+Weg mit stummem Bild plus Musik.
+
 ### Hochkant aus Querformat
 
 Steht in `breite`/`hoehe` ein anderes Seitenverhältnis als im Material — etwa
@@ -283,10 +299,6 @@ unbrauchbaren Stellen bei jeder Iteration neu.
 
 - **Export nur nach DaVinci Resolve**, siehe unten. Für andere Programme gibt
   es keinen Weg; FCPXML wurde versucht und verworfen.
-- **Originalton wird noch nicht gerendert.** `transcribe_clips.py` kann Sprache
-  bereits analysieren, aber `render.py` kodiert die Segmente weiterhin mit
-  `-an` und legt nur die Musik darunter. Eine unabhängige Tonspur mit `amix`
-  und Ducking ist der nächste, noch nicht gebaute Schritt.
 - **Abweichende Seitenverhältnisse werden beschnitten, nicht gerahmt.** Ein
   Letterbox-Rahmen ist nicht gebaut, ebenso wenig ein animierter Schwenk
   innerhalb einer Einstellung (Ken Burns) — der Ausschnitt steht je Shot fest.
@@ -315,7 +327,8 @@ Beim ersten Mal Resolve einmal neu starten, damit der Menüpunkt erscheint.
 
 Das Skript legt ein Projekt an, baut die Timeline, legt die Musik auf A1 und
 prüft anschließend die fertige Timeline gegen die Schnittliste. Bei Abweichung
-speichert es nicht. Der Originalton der Clips wird nicht übertragen.
+speichert es nicht. Die lokale MP4-Pipeline rendert Originalton und Ducking;
+der Resolve-Export überträgt diese neue Ton-Timeline noch nicht.
 
 Zeitlupe muss vorgebacken werden, weil Resolves API keine
 Geschwindigkeitsänderung setzen kann — das kostet Plattenplatz. Die Vorschau

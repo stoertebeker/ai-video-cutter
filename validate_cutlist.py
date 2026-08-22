@@ -1,15 +1,18 @@
 """Prueft eine Schnittliste, bevor gerendert wird.
 
-Geprueft wird: Lueckenlosigkeit der Schnittpunkte, dass kein Clip ueber sein
-Quellende hinausliest, dass sich zwei Verwendungen desselben Clips nicht
-ueberlappen, und welche Clips ueberhaupt vorkommen.
+Geprueft wird: Lueckenlosigkeit der Schnittpunkte, dass kein Bild- oder
+Tonsegment ueber sein Quellende hinausliest, dass sich zwei Bildverwendungen
+desselben Clips nicht ueberlappen, Audio-/Mixfelder und genutzte Clips.
 """
 
 import collections
+import functools
 import json
 import subprocess
 import sys
 from pathlib import Path
+
+import audio_timeline
 
 ROOT = Path(__file__).parent
 if len(sys.argv) < 2:
@@ -30,21 +33,27 @@ ZOOM_WARN = 4.0  # ab hier ist der Ausschnitt so klein, dass er weich wird
 ZIEL_AR = float(cfg["breite"]) / float(cfg["hoehe"])
 
 
-def probe(p: Path) -> tuple[float, int, int]:
-    """Dauer und Bildmasse in einem einzigen ffprobe-Aufruf.
+@functools.cache
+def probe(p: Path) -> tuple[float, int, int, bool]:
+    """Dauer, Bildmasse und Audiospur in einem einzigen ffprobe-Aufruf.
 
     Die Masse braucht die Ausschnittspruefung: ob crop_x oder crop_y
     ueberhaupt wirken, haengt am Verhaeltnis von Quelle zu Ziel.
     """
     r = subprocess.run(
         ["ffprobe", "-v", "quiet", "-print_format", "json",
-         "-select_streams", "v:0",
-         "-show_entries", "format=duration:stream=width,height", str(p)],
+         "-show_entries", "format=duration:stream=codec_type,width,height", str(p)],
         capture_output=True, text=True, check=True,
     )
     j = json.loads(r.stdout)
-    st = j["streams"][0]
-    return float(j["format"]["duration"]), int(st["width"]), int(st["height"])
+    video = next(st for st in j["streams"] if st.get("codec_type") == "video")
+    has_audio = any(st.get("codec_type") == "audio" for st in j["streams"])
+    return (
+        float(j["format"]["duration"]),
+        int(video["width"]),
+        int(video["height"]),
+        has_audio,
+    )
 
 
 fehler, hinweise = [], []
@@ -124,7 +133,7 @@ for s in cfg["shots"]:
             f"passt nicht zur Summe davor ({pos:.3f})"
         )
 
-    laenge, quell_w, quell_h = probe(pfad)
+    laenge, quell_w, quell_h, _ = probe(pfad)
     quell_ar = quell_w / quell_h
     if abs(quell_ar - ZIEL_AR) > 0.01:
         format_weicht_ab = True
@@ -164,6 +173,18 @@ for s in cfg["shots"]:
             )
     belegt[s["clip"]].append((s["in"], ende, s["n"]))
     pos += s["dauer"]
+
+
+def probe_audio(pfad: Path) -> tuple[float, bool]:
+    laenge, _, _, hat_audio = probe(pfad)
+    return laenge, hat_audio
+
+
+audio_fehler, audio_hinweise = audio_timeline.validate(
+    cfg, SRC, float(cfg["ende_s"]), probe_audio
+)
+fehler.extend(audio_fehler)
+hinweise.extend(audio_hinweise)
 
 if abs(pos - float(cfg["ende_s"])) > 0.001:
     fehler.append(f"Summe der Dauern {pos:.3f}s != ende_s {cfg['ende_s']}")
