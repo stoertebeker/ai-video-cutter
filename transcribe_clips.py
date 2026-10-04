@@ -81,7 +81,11 @@ def output_is_current(
     except (FileNotFoundError, OSError, UnicodeError, json.JSONDecodeError):
         return False
 
+    if not isinstance(document, dict):
+        return False
     settings = document.get("settings", {})
+    if not isinstance(settings, dict):
+        return False
     return (
         document.get("schema_version") == SCHEMA_VERSION
         and document.get("source") == source_identity(clip)
@@ -156,13 +160,53 @@ def make_document(
 
 def write_json_atomic(path: Path, document: dict[str, Any]) -> None:
     """Schreibt nie eine halbfertige Transkriptdatei an den Zielpfad."""
+    write_text_atomic(path, json.dumps(document, ensure_ascii=False, indent=2) + "\n")
+
+
+def write_text_atomic(path: Path, text: str) -> None:
+    """Speichert auch lesbare Exporte atomar als UTF-8."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(
-        json.dumps(document, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    temporary.write_text(text, encoding="utf-8")
     temporary.replace(path)
+
+
+def format_timestamp(seconds: float) -> str:
+    """SRT-Zeit mit Millisekunden, auch beim Uebertrag zur naechsten Minute."""
+    total_ms = max(0, int(seconds * 1000 + 0.5))
+    hours, remainder = divmod(total_ms, 3_600_000)
+    minutes, remainder = divmod(remainder, 60_000)
+    whole_seconds, milliseconds = divmod(remainder, 1000)
+    return f"{hours:02}:{minutes:02}:{whole_seconds:02},{milliseconds:03}"
+
+
+def write_readable_exports(path: Path, document: dict[str, Any]) -> None:
+    """Ergaenzt TXT und segmentbasierte SRT; fehlende Zeiten nie erfinden.
+
+    JSON bleibt der Vertrag fuer wortgenaue Schnittentscheidungen. Die SRT
+    verwendet ausschliesslich vorhandene Segmentzeiten, keine geratenen
+    Wortzeiten und keine automatische Sprecherzuordnung.
+    """
+    lines = [f"Transkript: {document['source']['file']}",
+             "Zeitmarken beziehen sich auf den Originalclip.", ""]
+    cues = []
+    for segment in document.get("segments", []):
+        text = " ".join(str(segment.get("text", "")).split())
+        if not text:
+            continue
+        start = _finite_float(segment.get("start"))
+        end = _finite_float(segment.get("end"))
+        timed = start is not None and end is not None and 0 <= start < end
+        if timed:
+            a, b = format_timestamp(start), format_timestamp(end)
+            lines.append(f"[{a} – {b}] {text}")
+            # Nach Rundung duerfen keine Null-Laengen-Cues entstehen.
+            if a != b:
+                cues.append(f"{len(cues) + 1}\n{a} --> {b}\n{text}\n")
+        else:
+            lines.append(text)
+    write_text_atomic(path.with_suffix(".txt"), "\n".join(lines) + "\n")
+    write_text_atomic(path.with_suffix(".srt"), "\n".join(cues))
 
 
 def transcribe_one(
@@ -294,6 +338,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{status:7} {clip.name} -> {destination}")
         if args.force or not current:
             pending.append((clip, destination))
+        elif not args.dry_run:
+            # Auch alte, aktuelle JSONs erhalten Exporte ohne Modell-Lauf.
+            write_readable_exports(
+                destination, json.loads(destination.read_text(encoding="utf-8-sig"))
+            )
 
     if args.dry_run or not pending:
         print(f"{len(pending)} von {len(clips)} Clip(s) zu transkribieren")
@@ -339,6 +388,7 @@ def main(argv: list[str] | None = None) -> int:
                 whisperx_version=package_version("whisperx"),
             )
             write_json_atomic(destination, document)
+            write_readable_exports(destination, document)
         except Exception as exc:  # pro Clip fortsetzen, Fehler am Ende melden
             failures.append(f"{clip.name}: {exc}")
             print(f"FEHLER  {clip.name}: {exc}", file=sys.stderr)

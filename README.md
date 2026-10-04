@@ -43,7 +43,7 @@ importiert es.
 
 Für sprachbasierten Vlog-Schnitt gibt es zusätzlich `transcribe_clips.py`.
 WhisperX benötigt eine getrennte Python-3.10-Umgebung; Installation, Pilotlauf
-und JSON-Format stehen in `WHISPERX.md`.
+und JSON-/TXT-/SRT-Ausgaben stehen in `WHISPERX.md`.
 
 ## Schnellstart
 
@@ -188,7 +188,7 @@ Projekt nichts zu ändern.**
 | `analyze_music.py` | Tempo, Beats, Onsets, RMS-Verlauf als JSON |
 | `plan_raster.py` | Taktraster aus den erkannten Beats, mit Pegel |
 | `make_contactsheets.py` | Kontaktbögen aus den Quellclips |
-| `transcribe_clips.py` | clipweise WhisperX-Transkripte mit Wortzeitmarken |
+| `transcribe_clips.py` | clipweise WhisperX-Transkripte mit Wortzeitmarken, Text- und SRT-Export |
 | `audio_timeline.py` | unabhängige Originalton-/Atmo-Spur und Musik-Ducking |
 | `overlay_timeline.py` | zeitgesteuerte GPX-Minikarten und künftige Bildeinblendungen |
 | `validate_cutlist.py` | prüft die Schnittliste vor dem Rendern |

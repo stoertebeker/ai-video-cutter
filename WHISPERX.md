@@ -11,7 +11,7 @@ Die normale `.venv` verwendet eine für WhisperX zu neue Python-Version.
 WhisperX läuft deshalb getrennt unter dem lokal installierten Python 3.10:
 
 ```powershell
-& "C:\Users\stoertebeker\AppData\Local\Programs\Python\Python310\python.exe" -m venv .venv-whisperx
+py -3.10 -m venv .venv-whisperx
 .venv-whisperx\Scripts\python.exe -m pip install --upgrade pip
 .venv-whisperx\Scripts\python.exe -m pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
 .venv-whisperx\Scripts\python.exe -m pip install whisperx==3.8.6
@@ -60,6 +60,24 @@ Die Ausgabe liegt unter
 aktuelle Dateien werden übersprungen. Eine geänderte Quelle, ein anderes Modell
 oder eine andere Sprachvorgabe löst eine neue Transkription aus; `--force`
 erzwingt sie ausdrücklich.
+
+Zusätzlich entstehen je Clip `.whisperx.txt` mit gut lesbarem Text und
+clip-lokalen Zeitbereichen sowie `.whisperx.srt` mit segmentweisen Untertiteln.
+Das JSON bleibt die Quelle für wortgenaue Schnittentscheidungen. Die SRT
+verwendet nur vorhandene, gültige Segmentzeiten; fehlende Wortzeiten werden
+nicht erfunden. Alle Texte sind automatische Arbeitsfassungen: Namen,
+Produktbezeichnungen und Aussagen vor einer Veröffentlichung prüfen.
+
+Auch bestehende aktuelle JSON-Dateien erhalten diese Exporte beim nächsten
+Aufruf, ohne WhisperX oder ein Modell zu laden. Dafür reicht die normale
+Werkzeug-Venv. `--dry-run` schreibt weiterhin keine Dateien. Beispiel:
+
+```powershell
+.venv\Scripts\python.exe transcribe_clips.py material/icy-box
+```
+
+Videos, Transkripte und Modell-Downloads bleiben lokale Projekt-/Cache-Daten.
+Für GitHub gehören nur Skript, Dokumentation und Tests ins Repository.
 
 ## JSON-Vertrag
 

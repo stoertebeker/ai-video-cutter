@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 import transcribe_clips as tc
@@ -55,6 +56,41 @@ class FakeWhisperX:
 
 
 class TranscribeClipsTests(unittest.TestCase):
+    def test_readable_exports_preserve_text_but_do_not_invent_timestamps(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / "clip.mp4.whisperx.json"
+            document = {"source": {"file": "clip.mp4"}, "segments": [
+                {"start": 59.9996, "end": 62.2, "text": " Grüß\n dich "},
+                {"text": "Ohne Zeit"},
+                {"start": 4, "end": 3, "text": "Ungültiger Bereich"},
+                {"start": 1.0001, "end": 1.0002, "text": "Sehr kurz"},
+            ]}
+            tc.write_readable_exports(output, document)
+            self.assertEqual(output.with_suffix(".srt").read_text(encoding="utf-8"),
+                             "1\n00:01:00,000 --> 00:01:02,200\nGrüß dich\n")
+            text = output.with_suffix(".txt").read_text(encoding="utf-8")
+            self.assertIn("Ohne Zeit", text)
+            self.assertIn("Ungültiger Bereich", text)
+            self.assertFalse(output.with_suffix(".srt.tmp").exists())
+
+    def test_cached_transcript_backfills_exports_without_loading_model(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "source"
+            source.mkdir()
+            clip = source / "clip.mp4"
+            clip.write_bytes(b"video")
+            output = Path(tmp) / "output"
+            destination = output / "clip.mp4.whisperx.json"
+            document = tc.make_document(
+                clip=clip, result={"segments": [{"start": 0, "end": 1, "text": "Hallo"}]},
+                model_name="large-v3", requested_language="de", device="cpu",
+                compute_type="int8", whisperx_version="test")
+            tc.write_json_atomic(destination, document)
+            with patch.object(tc, "load_whisperx", side_effect=AssertionError("Modell geladen")):
+                self.assertEqual(tc.main([str(source), "--output", str(output)]), 0)
+            self.assertTrue(destination.with_suffix(".txt").is_file())
+            self.assertTrue(destination.with_suffix(".srt").is_file())
+
     def test_find_clips_filters_and_sorts_case_insensitively(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp)
