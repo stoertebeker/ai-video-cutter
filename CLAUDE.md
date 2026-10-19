@@ -1,7 +1,8 @@
 # Musikgeschnittene Videomontage — Werkzeugkette
 
-Aus vielen kurzen Clips eine auf Musik geschnittene Montage bauen. Alles lokal,
-keine API-Keys, keine Cloud.
+Aus vielen kurzen Clips eine auf Musik geschnittene Montage bauen. Der normale
+Schnitt läuft lokal ohne API-Keys. Optionale externe Sprachisolierung ist in
+[NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) dokumentiert.
 
 Das Prinzip: **Claude übernimmt die Fleißarbeit und die Rhythmusarithmetik, der
 Mensch entscheidet über Auswahl und Timing.** Jeder Schritt hinterlässt eine
@@ -233,6 +234,24 @@ ffmpeg-Falle: `-t` muss **vor** `-i` stehen. Dahinter begrenzt es die Ausgabe
 und schneidet die von `setpts` gedehnte Zeitlupe wieder auf die Quelldauer
 zurück. Das Video ist dann halb so lang, der Container zeigt trotzdem die volle
 Länge, weil die Tonspur sie vorgibt.
+
+### 3c. Sprachaufnahmen mit störendem Hintergrund
+
+Lautheitsanpassung ist keine Geräuschunterdrückung. Für Veranstaltungsinterviews
+und Danksagungen den bewährten Audo-/Atmosphären-Workflow in
+[NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) lesen: gelungene Takes auswählen,
+nur den benötigten Ton verarbeiten, vollständige Antworten und Synchronität
+prüfen, Sprache und Original pegelangleichen und zunächst 75/25 mischen.
+Die externe Verarbeitung muss vom Auftrag abgedeckt sein; eine passende bereits
+erteilte Freigabe nicht erneut einholen. Eine lokale RNNoise-Alternative ist
+ebenfalls beschrieben.
+
+Anbieterantworten können trotz HTTP 200 gekürzt sein; beim getesteten
+Audo-Endpunkt wurden am 19.10.2026 nur 60 s einer längeren Anfrage verarbeitet.
+Jeden Teil auf Dauer prüfen. Verlängerte Schlussbereiche ebenfalls bearbeiten,
+damit die Hintergrundlautstärke am Ende nicht plötzlich ansteigt. Rezept und
+Ableitungen im jeweiligen Projekt halten, dann wie üblich aus der Schnittliste
+rendern und nummerieren. Ein Transkript ersetzt keine Hörabnahme.
 
 ### 4. Rendern und prüfen
 

@@ -1,7 +1,9 @@
 # Musikgeschnittene Videomontage
 
-Aus vielen kurzen Clips eine auf Musik geschnittene Montage bauen — mit ffmpeg
-und Python, vollständig lokal. Keine API-Keys, keine Cloud, kein Konto.
+Aus vielen kurzen Clips eine auf Musik geschnittene Montage bauen — lokal mit
+ffmpeg und Python, ohne API-Keys oder Konto für den normalen Schnitt.
+Für Sprachaufnahmen gibt es zusätzlich einen optionalen Workflow mit externer
+Geräuschunterdrückung; siehe [Hintergrundgeräusche reduzieren](NOISE_SUPPRESSION.md).
 
 Gedacht für alle, die einen Ordner voller Clips und ein Musikstück haben und
 daraus einen Teaser schneiden wollen, ohne dafür ein Schnittprogramm
@@ -283,6 +285,16 @@ platziert mehrere Tracksegmente mit eigenem Quellstart, Timeline-Start, Dauer
 und Pegel. Überlappende Segmente mit `fade_in_s`/`fade_out_s` ergeben einen
 weichen Crossfade; derselbe Track darf später erneut eingesetzt werden. Alte
 Schnittlisten mit nur `audio` laufen unverändert weiter.
+
+### Hintergrundgeräusche bei Sprache
+
+Für laute Veranstaltungsaufnahmen ist ein Ablauf mit Audo-Sprachisolierung und
+anschließender Beimischung von Originalatmosphäre dokumentiert. Ausgangspunkt
+sind 75 % bereinigte Sprache und 25 % pegelangepasster Originalton.
+[NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) beschreibt Auswahl, externe
+Verarbeitung, die Prüfung auf gekürzte Antworten, Pegelangleichung,
+Synchronkontrolle und die lokale RNNoise-Alternative. Die Bearbeitung wird vor
+dem Rendern vorbereitet; der Renderer lädt selbst keine Aufnahmen hoch.
 
 ### GPX-Minikarte und Bilder
 

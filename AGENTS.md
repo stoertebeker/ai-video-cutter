@@ -18,8 +18,8 @@ und wiederholt die Punkte, an denen man ohne Vorwissen scheitert.
 ## Was dieses Projekt ist
 
 Eine Werkzeugkette, um aus vielen kurzen Clips eine auf Musik geschnittene
-Montage zu bauen. Alles läuft lokal mit ffmpeg und Python, keine API-Keys,
-keine Cloud.
+Montage zu bauen. Der normale Schnitt läuft lokal mit ffmpeg und Python ohne
+API-Keys. Optionale externe Sprachisolierung ist gesondert dokumentiert.
 
 Der Kern: **Der Agent sieht sich das Material tatsächlich an.** Kontaktbögen
 werden als Bilddateien erzeugt und dann mit dem Datei-Lesewerkzeug als Bild
@@ -129,6 +129,17 @@ schreibt `render.py` ohnehin; sie braucht keinen eigenen Schritt.
    sind 24 Frames. Steht so im Kommentar von
    `7_add_subclips_to_timeline.py` im Scripting-SDK, nirgends sonst explizit.
    Leicht zu übersehen, ergibt sonst einen Frame Differenz pro Einstellung.
+
+## Hintergrundgeräusche bei Sprachaufnahmen
+
+Bei störender Veranstaltungsatmosphäre zuerst
+[NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) lesen. Bewährt ist Audo-Sprachisolierung
+plus 25 % pegelangepasster Originalton. Nur ausgewählte Tonbereiche verarbeiten;
+die externe Übertragung muss vom Auftrag abgedeckt sein. Vollständigkeit jeder
+Antwort und Synchronität prüfen, auch nachträglich angehängte Schlussbereiche
+bearbeiten. Die Anleitung enthält auch eine lokale RNNoise-Alternative.
+Rezept und Ableitungen bleiben im Projekt, der Standardrenderer verarbeitet
+die vorbereiteten Tondateien ohne automatische Entrauschung oder Uploads.
 
 ## Export nach DaVinci Resolve
 
