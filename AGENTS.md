@@ -132,9 +132,12 @@ schreibt `render.py` ohnehin; sie braucht keinen eigenen Schritt.
 
 ## Hintergrundgeräusche bei Sprachaufnahmen
 
-Bei störender Veranstaltungsatmosphäre zuerst
-[NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) lesen. Bewährt ist Audo-Sprachisolierung
-plus 25 % pegelangepasster Originalton. Nur ausgewählte Tonbereiche verarbeiten;
+Geräuschunterdrückung und Atmosphärenmischung sind optionale Werkzeuge für
+konkret beauftragte oder im Schnitt vereinbarte Aufnahmen, keine automatisch
+anzuwendenden Standards. Bei einem solchen Einsatz
+[NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) lesen. Die dortige 75/25-Mischung
+ist ein früheres Anwendungsbeispiel, kein Standardwert. Verfahren, Stärke und
+Mischanteile je nach Material wählen. Nur ausgewählte Tonbereiche verarbeiten;
 die externe Übertragung muss vom Auftrag abgedeckt sein. Vollständigkeit jeder
 Antwort und Synchronität prüfen, auch nachträglich angehängte Schlussbereiche
 bearbeiten. Die Anleitung enthält auch eine lokale RNNoise-Alternative.

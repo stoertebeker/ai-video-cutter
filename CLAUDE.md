@@ -237,11 +237,15 @@ Länge, weil die Tonspur sie vorgibt.
 
 ### 3c. Sprachaufnahmen mit störendem Hintergrund
 
-Lautheitsanpassung ist keine Geräuschunterdrückung. Für Veranstaltungsinterviews
-und Danksagungen den bewährten Audo-/Atmosphären-Workflow in
-[NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) lesen: gelungene Takes auswählen,
-nur den benötigten Ton verarbeiten, vollständige Antworten und Synchronität
-prüfen, Sprache und Original pegelangleichen und zunächst 75/25 mischen.
+Lautheitsanpassung ist keine Geräuschunterdrückung. Zusätzliche Entrauschung und
+Atmosphärenmischung sind optionale Werkzeuge, kein Standard für neue Projekte
+oder alle Sprachaufnahmen. Nur auf die konkret beauftragten oder im Schnitt
+vereinbarten Aufnahmen anwenden. Wenn dieser Einsatz gewünscht ist,
+[NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) als Werkzeugbeschreibung lesen:
+gelungene Takes auswählen, nur den benötigten Ton verarbeiten, vollständige
+Antworten und Synchronität prüfen. Verfahren, Stärke und ein eventueller
+Originaltonanteil werden für das Material gewählt. 75/25 ist ausschließlich
+ein dokumentiertes Anwendungsbeispiel, kein vorgegebenes Mischverhältnis.
 Die externe Verarbeitung muss vom Auftrag abgedeckt sein; eine passende bereits
 erteilte Freigabe nicht erneut einholen. Eine lokale RNNoise-Alternative ist
 ebenfalls beschrieben.

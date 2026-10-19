@@ -288,9 +288,11 @@ Schnittlisten mit nur `audio` laufen unverändert weiter.
 
 ### Hintergrundgeräusche bei Sprache
 
-Für laute Veranstaltungsaufnahmen ist ein Ablauf mit Audo-Sprachisolierung und
-anschließender Beimischung von Originalatmosphäre dokumentiert. Ausgangspunkt
-sind 75 % bereinigte Sprache und 25 % pegelangepasster Originalton.
+Für gezielte Geräuschreduktion bei Bedarf ist ein optionaler Ablauf mit
+Audo-Sprachisolierung und möglicher Beimischung von Originalatmosphäre
+dokumentiert. Er wird nicht automatisch auf Projekte oder Sprachaufnahmen
+angewendet. Die dokumentierte 75/25-Mischung ist ein früheres Anwendungsbeispiel,
+kein Standardwert; Verfahren und Mischanteil werden je nach Aufnahme gewählt.
 [NOISE_SUPPRESSION.md](NOISE_SUPPRESSION.md) beschreibt Auswahl, externe
 Verarbeitung, die Prüfung auf gekürzte Antworten, Pegelangleichung,
 Synchronkontrolle und die lokale RNNoise-Alternative. Die Bearbeitung wird vor

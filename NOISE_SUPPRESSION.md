@@ -1,11 +1,18 @@
-# Hintergrundgeräusche bei Sprachaufnahmen reduzieren
+# Optionales Werkzeug: Hintergrundgeräusche bei Sprache reduzieren
 
-Bewährter Ablauf aus den ICY-BOX-Preisübergaben im Chat „Northcon-reel“ und
-dem Sponsorenvideo der gv#36: Sprache mit **Audo** isolieren, bereinigten und
-unbearbeiteten Ton auf vergleichbaren Pegel bringen und anschließend
-**75 % bereinigte Sprache mit 25 % Originalton** mischen. So bleibt ein Teil
-der Veranstaltungsatmosphäre erhalten. Dieses Verhältnis ist ein Ausgangspunkt
-für die Hörabnahme, keine feste Vorgabe für jedes Material.
+Diese Anleitung beschreibt ein Werkzeug für den gezielten Einsatz bei Bedarf,
+**keinen Standard der Schnittpipeline**. Geräuschunterdrückung und
+Atmosphärenmischung nicht automatisch auf neue Projekte, alle Sprachaufnahmen
+oder jede laute Szene anwenden. Sie werden nur für die konkret beauftragten
+oder im Schnitt vereinbarten Aufnahmen eingesetzt. Verfahren, Stärke und ein
+eventueller Originaltonanteil richten sich nach Material und gewünschtem Klang.
+
+Ein Anwendungsbeispiel sind die ICY-BOX-Preisübergaben im Chat „Northcon-reel“
+und das Sponsorenvideo der gv#36: Dort wurde Sprache mit **Audo** isoliert,
+bereinigter und unbearbeiteter Ton auf vergleichbaren Pegel gebracht und
+**75 % bereinigte Sprache mit 25 % Originalton** gemischt. Diese Zahlen
+dokumentieren die dort gewählte Mischung; sie sind weder ein voreingestellter
+Wert noch ein allgemeiner Ausgangspunkt für andere Projekte.
 
 Der normale Schnitt und Render laufen lokal. Audo ist eine **optionale externe
 Verarbeitung**: Der Auftrag muss die Übertragung der ausgewählten Sprachaufnahme
@@ -108,7 +115,7 @@ sprachreiche Stellen gesondert prüfen, statt blind einen Versatz zu übernehmen
 In den bisherigen Audo-Fassungen lag der gemessene Versatz bei null. Das ist
 ein Befund dieser Dateien, keine Zusicherung für andere Anbieter oder Modelle.
 
-## 5. Pegel angleichen, dann Atmosphäre beimischen
+## 5. Bei gewählter Atmosphärenmischung die Pegel angleichen
 
 Bereinigte Sprache und Original müssen vor dem Mischen auf vergleichbarem Pegel
 liegen. Zweistufiges ffmpeg-`loudnorm` verwenden: zuerst mit
@@ -118,13 +125,17 @@ liegen. Zweistufiges ffmpeg-`loudnorm` verwenden: zuerst mit
 Im zweiten Durchgang `linear=true` angeben und den tatsächlichen Normalisierungstyp
 protokollieren; die Spitzenbegrenzung kann einen dynamischen Durchgang erfordern.
 
-Bewährtes Ziel für diese Sprachbeiträge: −18 LUFS. Für die gv#36-Zwischenstände
-wurde −4 dBTP als Spitzenziel gewählt, um Reserve für Mischung und AAC-Encoding
-zu lassen. Frühere ICY-BOX-Vergleiche verwendeten −2 dBTP. Das fertige Video
-erneut messen; ein Zielwert der Vorstufe ist kein gemessener Exportwert.
+In diesen Beispielen wurde −18 LUFS als Ziel für die Sprachbeiträge gewählt.
+Für die gv#36-Zwischenstände wurde −4 dBTP als Spitzenziel gewählt, um Reserve
+für Mischung und AAC-Encoding zu lassen. Frühere ICY-BOX-Vergleiche verwendeten
+−2 dBTP. Auch dies sind projektbezogene Werte, keine neuen globalen Vorgaben.
+Das fertige Video erneut messen; ein Zielwert der Vorstufe ist kein gemessener
+Exportwert.
 
-Bei unterschiedlich aufgenommenen Szenen diese Anpassung je Szene durchführen.
-Anschließend beide synchronen, pegelangepassten Spuren mischen:
+Bei unterschiedlich aufgenommenen Szenen diese Anpassung je gewählter Szene
+durchführen. Falls Originalatmosphäre beigemischt werden soll, den gewünschten
+Anteil für das konkrete Material festlegen und beide synchronen, pegelangepassten
+Spuren entsprechend mischen. Beispiel für die damals gewählte 75/25-Mischung:
 
 ```text
 [clean][original]amix=inputs=2:weights=0.75 0.25:normalize=0:duration=shortest[mix]
